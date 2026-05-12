@@ -14,33 +14,31 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
 
-        // ViewModel を生成して DataContext に設定
         _viewModel = new MainViewModel();
-        this.DataContext = _viewModel;
+        DataContext = _viewModel;
 
-        // ロードイベント
-        this.Loaded += MainWindow_Loaded;
-
-        // クローズイベント
-        this.Closed += MainWindow_Closed;
+        Loaded += OnLoaded;
+        Closed += OnClosed;
     }
 
     // ---------------------------------------------------------
     // Window Loaded
     // ---------------------------------------------------------
-    private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+    private void OnLoaded(object sender, RoutedEventArgs e)
     {
-        // 必要なら初期化処理をここに
-        // 例: ログに起動メッセージ
-        _viewModel.LogText += "CellCountX 起動\n";
+        // ViewModel に初期ログを任せる
+        _viewModel.AppendStartupLog();
     }
 
     // ---------------------------------------------------------
     // Window Closed
     // ---------------------------------------------------------
-    private void MainWindow_Closed(object? sender, EventArgs e)
+    private void OnClosed(object? sender, EventArgs e)
     {
-        // ViewModel に Dispose が必要ならここで呼ぶ
-        // _viewModel.Dispose();
+        // 将来 Dispose が必要になった場合のために残す
+        if (_viewModel is IDisposable disposable)
+        {
+            disposable.Dispose();
+        }
     }
 }

@@ -1,7 +1,6 @@
 ﻿using System.Diagnostics;
 using System.IO;
 using System.Text;
-using System.Windows;
 
 namespace CellCountX.Wpf.Model;
 
@@ -11,22 +10,12 @@ public class PythonServer
     private readonly string _serverScript;
     private readonly string _workingDir;
 
-    // 「今後はタイムアウト確認をしない」フラグ
-    private static bool _disableTimeoutPrompt = false;
-
-    private Process? process;
-    private bool cancelRequested = false;
-
-    public void RequestCancel()
-    {
-        cancelRequested = true;
-        try { process?.Kill(); } catch { }
-    }
+    private Process? _process;
 
     public PythonServer()
     {
         // ---------------------------------------------------------
-        // 1. 配布版（AppContext.BaseDirectory/python/）を優先
+        // 配布版を優先
         // ---------------------------------------------------------
         string baseDir = AppContext.BaseDirectory;
 
@@ -42,10 +31,8 @@ public class PythonServer
         }
 
         // ---------------------------------------------------------
-        // 2. 開発版（src/CellCountX.Py/）を fallback として使用
+        // 開発版 fallback
         // ---------------------------------------------------------
-        // baseDir = bin/Debug/net10.0-windows/
-        // → 4階層戻ると src/
         string devRoot = Path.GetFullPath(Path.Combine(baseDir, @"..\..\..\..\"));
         string devPython = Path.Combine(devRoot, "CellCountX.Py", "cellpose", "Scripts", "python.exe");
         string devServer = Path.Combine(devRoot, "CellCountX.Py", "server.py");
@@ -58,26 +45,35 @@ public class PythonServer
             return;
         }
 
-        // ---------------------------------------------------------
-        // 3. どちらも見つからない場合はエラー
-        // ---------------------------------------------------------
-        throw new Exception("python.exe と server.py が見つかりません。\n" +
-                            "配布版: <exe>/python/venv/Scripts/python.exe\n" +
-                            "開発版: src/CellCountX.Py/venv/Scripts/python.exe");
+        throw new Exception("python.exe と server.py が見つかりません。");
+    }
+
+    // ---------------------------------------------------------
+    // キャンセル要求
+    // ---------------------------------------------------------
+    public void RequestCancel()
+    {
+        try { _process?.Kill(); } catch { }
+    }
+
+    // ---------------------------------------------------------
+    // PythonServer を非同期化するために Task.Run でラップする
+    // ---------------------------------------------------------
+    public Task<PythonServerResult> RunOnceAsync(string json, int timeoutSeconds)
+    {
+        return Task.Run(() => RunOnce(json, timeoutSeconds));
     }
 
     // ---------------------------------------------------------
     // Python を 1 回起動して JSON を渡し、結果を受け取る
     // ---------------------------------------------------------
-    public string RunOnce(string json, int timeoutSeconds)
+    public PythonServerResult RunOnce(string json, int timeoutSeconds)
     {
-        cancelRequested = false;
-
         if (!File.Exists(_pythonExe))
-            throw new FileNotFoundException($"python.exe が見つかりません: {_pythonExe}");
+            return PythonServerResult.Error($"python.exe が見つかりません: {_pythonExe}");
 
         if (!File.Exists(_serverScript))
-            throw new FileNotFoundException($"server.py が見つかりません: {_serverScript}");
+            return PythonServerResult.Error($"server.py が見つかりません: {_serverScript}");
 
         var psi = new ProcessStartInfo
         {
@@ -93,124 +89,63 @@ public class PythonServer
             StandardErrorEncoding = Encoding.UTF8
         };
 
-        process = new Process
-        {
-            StartInfo = psi
-        };
+        _process = new Process { StartInfo = psi };
 
-        var outputBuilder = new StringBuilder();
-        var errorBuilder = new StringBuilder();
+        var stdout = new StringBuilder();
+        var stderr = new StringBuilder();
 
-        process.OutputDataReceived += (s, e) =>
+        _process.OutputDataReceived += (s, e) =>
         {
             if (!string.IsNullOrEmpty(e.Data))
-                outputBuilder.AppendLine(e.Data);
+                stdout.AppendLine(e.Data);
         };
 
-        process.ErrorDataReceived += (s, e) =>
+        _process.ErrorDataReceived += (s, e) =>
         {
             if (!string.IsNullOrEmpty(e.Data))
-                errorBuilder.AppendLine(e.Data);
+                stderr.AppendLine(e.Data);
         };
 
-        // 起動
-        process.Start();
+        _process.Start();
+        _process.BeginOutputReadLine();
+        _process.BeginErrorReadLine();
 
-        // 出力の非同期読み取り開始
-        process.BeginOutputReadLine();
-        process.BeginErrorReadLine();
-
-        // JSON を Python に送信
-        using (var sw = process.StandardInput)
+        using (var sw = _process.StandardInput)
         {
             sw.WriteLine(json);
         }
 
-        // タイムアウト値をミリ秒に変換
-        var timeoutMs = timeoutSeconds * 1000;
+        // タイムアウト待ち（UI 依存なし）
+        bool exited = _process.WaitForExit(timeoutSeconds * 1000);
 
-        while (true)
+        if (!exited)
         {
-            if (cancelRequested)
-            {
-                return "{\"error\": \"User cancelled\"}";
-            }
-
-            if (_disableTimeoutPrompt)
-            {
-                // タイムアウト確認なしで無限待ち
-                // ただし、ユーザーがキャンセルを要求した場合はすぐに終了する
-                while (!process.WaitForExit(1000))
-                {
-                    if (cancelRequested)
-                    {
-                        return "{\"error\": \"User cancelled\"}";
-                    }
-                }
-                break;
-            }
-
-            if (process.WaitForExit(timeoutMs))
-            {
-                // 正常終了
-                break;
-            }
-
-            // タイムアウト発生
-            var result = MessageBox.Show(
-                "Python の処理が規定時間内に終了しませんでした。\n" +
-                "処理を中断して Python プロセスを強制終了しますか？",
-                "タイムアウト",
-                MessageBoxButton.OKCancel,
-                MessageBoxImage.Warning
-            );
-
-            if (result == MessageBoxResult.OK)
-            {
-                try { process.Kill(); } catch { }
-                return "{\"error\": \"Python process timeout\"}";
-            }
-            else
-            {
-                // キャンセル → 今後どうするか確認
-                var result2 = MessageBox.Show(
-                    "今後、この処理ではタイムアウト確認を行わず待ち続けますか？\n\n" +
-                    "「はい」→ 今後はタイムアウト確認なし（無限待ち）\n" +
-                    "「いいえ」→ 今回だけ続行（次のタイムアウトで再度確認）",
-                    "タイムアウト設定",
-                    MessageBoxButton.YesNo,
-                    MessageBoxImage.Question
-                );
-
-                if (result2 == MessageBoxResult.Yes)
-                {
-                    _disableTimeoutPrompt = true;
-                    continue;
-                }
-                else
-                {
-                    // 今回だけ続行
-                    continue;
-                }
-            }
+            try { _process.Kill(); } catch { }
+            return PythonServerResult.Error("Python process timeout");
         }
 
-        // 結果取得
-        string output = outputBuilder.ToString().Trim();
-        string error = errorBuilder.ToString().Trim();
+        string outStr = stdout.ToString().Trim();
+        string errStr = stderr.ToString().Trim();
 
-        if (!string.IsNullOrEmpty(error))
-        {
-            return $"{{\"error\": \"{Escape(error)}\"}}";
-        }
+        if (!string.IsNullOrEmpty(errStr))
+            return PythonServerResult.Error(errStr);
 
-        process.Dispose();
-        return output;
+        return PythonServerResult.Success(outStr);
     }
+}
 
-    // JSON 文字列に安全に埋め込むためのエスケープ
-    private static string Escape(string s)
-    {
-        return s.Replace("\\", "\\\\").Replace("\"", "\\\"");
-    }
+// ---------------------------------------------------------
+// PythonServer の戻り値（成功/失敗）
+// ---------------------------------------------------------
+public class PythonServerResult
+{
+    public bool IsError { get; set; }
+    public string ErrorMessage { get; set; } = "";
+    public string Output { get; set; } = "";
+
+    public static PythonServerResult Success(string output)
+        => new PythonServerResult { IsError = false, Output = output };
+
+    public static PythonServerResult Error(string msg)
+        => new PythonServerResult { IsError = true, ErrorMessage = msg };
 }
