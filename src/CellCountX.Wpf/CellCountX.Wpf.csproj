@@ -8,4 +8,22 @@
     <UseWPF>true</UseWPF>
   </PropertyGroup>
 
+  <!-- ============================================================
+       Release ビルド時のみ python/ をコピーする
+       ============================================================ -->
+  <Target Name="CopyPython" AfterTargets="Build" Condition="'$(Configuration)' == 'Release'">
+    <ItemGroup>
+      <PythonFiles Include="..\CellCountX.Py\**\*" Exclude="..\CellCountX.Py\server.py" />
+    </ItemGroup>
+
+    <Copy SourceFiles="@(PythonFiles)" DestinationFolder="$(OutDir)python\%(RecursiveDir)" SkipUnchangedFiles="true" />
+  </Target>
+
+  <!-- ============================================================
+       Release ビルド時のみ server.py をコピーする
+       ============================================================ -->
+  <Target Name="CopyServerPy" AfterTargets="Build" Condition="'$(Configuration)' == 'Release'">
+    <Copy SourceFiles="..\CellCountX.Py\server.py" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+  </Target>
+
 </Project>
