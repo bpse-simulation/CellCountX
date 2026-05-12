@@ -9,65 +9,54 @@
 
     <Grid Margin="20">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/> <!-- 入力フォルダ -->
-            <RowDefinition Height="Auto"/> <!-- 出力フォルダ -->
-            <RowDefinition Height="Auto"/> <!-- GPU -->
-            <RowDefinition Height="Auto"/> <!-- タイムアウト -->
-            <RowDefinition Height="*"/>    <!-- ログ -->
-            <RowDefinition Height="Auto"/> <!-- 実行ボタン -->
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- ============================
-             1. 入力フォルダ選択
-           ============================ -->
+        <!-- 0. 入力フォルダ -->
         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
             <TextBlock Text="画像フォルダ：" VerticalAlignment="Center" Margin="0,0,10,0"/>
             <TextBox Text="{Binding InputFolder, Mode=TwoWay}" Width="500" Margin="0,0,10,0"/>
             <Button Content="参照..." Command="{Binding BrowseFolderCommand}" Width="80"/>
         </StackPanel>
-        
-        <!-- ============================
-             2. 出力フォルダ選択
-           ============================ -->
+
+        <!-- 1. 出力フォルダ -->
         <StackPanel Grid.Row="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,10,0,0">
             <TextBlock Text="出力フォルダ：" VerticalAlignment="Center" Margin="0,0,10,0"/>
             <TextBox Text="{Binding OutputFolder, Mode=TwoWay}" Width="500" Margin="0,0,10,0"/>
             <Button Content="参照..." Command="{Binding BrowseOutputFolderCommand}" Width="80"/>
         </StackPanel>
 
-        <!-- ============================
-             3. GPU 使用チェックボックス
-           ============================ -->
+        <!-- 2. GPU -->
         <CheckBox Grid.Row="2"
                   Content="GPU を使用する"
                   IsChecked="{Binding UseGpu, Mode=TwoWay}"
                   Margin="0,10,0,10"
                   FontSize="14"/>
 
-        <!-- ============================
-             4. タイムアウト設定（秒）
-           ============================ -->
+        <!-- 3. タイムアウト -->
         <StackPanel Grid.Row="3" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,0,10">
             <TextBlock Text="タイムアウト（秒）：" VerticalAlignment="Center"/>
             <TextBox Text="{Binding TimeoutSeconds, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                      Width="80" Margin="10,0,0,0"/>
         </StackPanel>
 
-        <!-- ============================
-             5. ログ表示エリア
-           ============================ -->
+        <!-- 4. ログ -->
         <GroupBox Grid.Row="4" Header="ログ" Margin="0,10,0,10">
-            <ScrollViewer VerticalScrollBarVisibility="Auto">
-                <TextBlock Text="{Binding LogText}" 
-                           TextWrapping="Wrap" 
+            <ScrollViewer x:Name="LogScrollViewer"
+                          VerticalScrollBarVisibility="Auto">
+                <TextBlock Text="{Binding LogText}"
+                           TextWrapping="Wrap"
                            FontFamily="Consolas"
                            Margin="5"/>
             </ScrollViewer>
         </GroupBox>
 
-        <!-- ============================
-             6. バッチ処理ボタン + 進捗バー
-           ============================ -->
+        <!-- 5. 実行ボタン -->
         <StackPanel Grid.Row="5" Orientation="Vertical">
             <ProgressBar Height="20"
                          Minimum="0"

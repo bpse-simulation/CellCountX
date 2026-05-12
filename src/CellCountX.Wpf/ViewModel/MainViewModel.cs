@@ -2,7 +2,6 @@
 using CellCountX.Wpf.Model;
 using System.ComponentModel;
 using System.IO;
-using System.Windows;
 using System.Windows.Input;
 
 namespace CellCountX.Wpf.ViewModel;
@@ -33,7 +32,7 @@ public class MainViewModel : INotifyPropertyChanged
         set { _useGpu = value; OnPropertyChanged(nameof(UseGpu)); }
     }
 
-    private int _timeoutSeconds = 60;
+    private int _timeoutSeconds = 600;
     public int TimeoutSeconds
     {
         get => _timeoutSeconds;

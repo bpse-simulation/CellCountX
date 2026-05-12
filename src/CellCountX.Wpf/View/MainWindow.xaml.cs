@@ -1,4 +1,5 @@
 ﻿using CellCountX.Wpf.ViewModel;
+using System.ComponentModel;
 using System.Windows;
 
 namespace CellCountX.Wpf.View;
@@ -19,6 +20,9 @@ public partial class MainWindow : Window
 
         Loaded += OnLoaded;
         Closed += OnClosed;
+
+        // LogText の変更を監視してスクロール
+        _viewModel.PropertyChanged += ViewModel_PropertyChanged;
     }
 
     // ---------------------------------------------------------
@@ -35,10 +39,22 @@ public partial class MainWindow : Window
     // ---------------------------------------------------------
     private void OnClosed(object? sender, EventArgs e)
     {
-        // 将来 Dispose が必要になった場合のために残す
         if (_viewModel is IDisposable disposable)
-        {
             disposable.Dispose();
+    }
+
+    // -----------------------------
+    // LogText 更新時に自動スクロール
+    // -----------------------------
+    private void ViewModel_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(MainViewModel.LogText))
+        {
+            // UI スレッドで遅延実行してスクロールを安定化
+            LogScrollViewer.Dispatcher.InvokeAsync(() =>
+            {
+                LogScrollViewer.ScrollToEnd();
+            }, System.Windows.Threading.DispatcherPriority.Background);
         }
     }
 }

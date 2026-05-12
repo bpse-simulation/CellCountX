@@ -49,19 +49,42 @@ public class PythonServer
     }
 
     // ---------------------------------------------------------
+    // 「安全な Kill」メソッド
+    // ---------------------------------------------------------
+    private void SafeKill(Process? p)
+    {
+        if (p == null)
+            return;
+
+        try
+        {
+            if (!p.HasExited)
+                p.Kill(entireProcessTree: true); // 子プロセスも含めて殺す
+        }
+        catch
+        {
+            // Kill に失敗しても例外は握りつぶす
+        }
+    }
+
+    // ---------------------------------------------------------
     // キャンセル要求
     // ---------------------------------------------------------
     public void RequestCancel()
     {
-        try { _process?.Kill(); } catch { }
+        SafeKill(_process);
     }
 
     // ---------------------------------------------------------
     // PythonServer を非同期化するために Task.Run でラップする
     // ---------------------------------------------------------
-    public Task<PythonServerResult> RunOnceAsync(string json, int timeoutSeconds)
+    public async Task<PythonServerResult> RunOnceAsync(string json, int timeoutSeconds, CancellationToken token)
     {
-        return Task.Run(() => RunOnce(json, timeoutSeconds));
+        return await Task.Run(() =>
+        {
+            token.ThrowIfCancellationRequested();
+            return RunOnce(json, timeoutSeconds);
+        }, token);
     }
 
     // ---------------------------------------------------------

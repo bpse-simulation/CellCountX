@@ -11,12 +11,12 @@ public class PythonClient
         _server = server;
     }
 
-    public async Task<PythonResponse> RunAsync(string json, int timeoutSeconds)
+    public async Task<PythonResponse> RunAsync(string json, int timeoutSeconds, CancellationToken token)
     {
         try
         {
             // PythonServerResult を受け取る
-            var result = await _server.RunOnceAsync(json, timeoutSeconds);
+            var result = await _server.RunOnceAsync(json, timeoutSeconds, token);
 
             if (result.IsError)
             {
@@ -33,12 +33,12 @@ public class PythonClient
                 RawOutput = result.Output
             };
         }
-        catch (Exception ex)
+        catch (OperationCanceledException)
         {
             return new PythonResponse
             {
                 IsError = true,
-                ErrorMessage = ex.Message
+                ErrorMessage = "キャンセルされました"
             };
         }
     }

@@ -23,6 +23,14 @@ public class BatchProcessor
 
     public async Task StartAsync(BatchRequest req, CancellationToken token)
     {
+        // フォルダパスに全角文字が含まれていないかチェック
+        // これは Python, CellPose 側でのエラーを回避するためのもの
+        if (req.InputFolder.Any(c => c > 127))
+        {
+            Log?.Invoke("入力フォルダのパスに全角文字が含まれています。処理を中断します。");
+            return;
+        }
+
         var files = Directory
             .EnumerateFiles(req.InputFolder)
             .Where(PathValidator.IsImageFile)
@@ -66,7 +74,7 @@ public class BatchProcessor
             try
             {
                 // PythonClient を使う
-                var py = await _python.RunAsync(json, req.TimeoutSeconds);
+                var py = await _python.RunAsync(json, req.TimeoutSeconds, token);
 
                 if (py.IsError)
                 {

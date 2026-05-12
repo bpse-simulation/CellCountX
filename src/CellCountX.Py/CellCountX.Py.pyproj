@@ -4,7 +4,8 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>c6c3d6f9-aa82-40d1-a691-67b71ed10b15</ProjectGuid>
     <ProjectHome>.</ProjectHome>
-    <StartupFile>CellCountX.Py.py</StartupFile>
+    <StartupFile>
+    </StartupFile>
     <SearchPath>
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
@@ -22,7 +23,6 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="CellCountX.Py.py" />
     <Compile Include="server.py" />
   </ItemGroup>
   <ItemGroup>
