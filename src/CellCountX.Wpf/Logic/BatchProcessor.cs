@@ -4,30 +4,23 @@ using CellCountX.Wpf.Model;
 
 namespace CellCountX.Wpf.Logic;
 
-public class BatchProcessor
+public class BatchProcessor(PythonClient python)
 {
-    private readonly PythonClient _python;
-    private readonly JsonParser _jsonParser;
-    private readonly CsvExporter _csvExporter;
+    private readonly PythonClient _python = python;
+    private readonly JsonParser _jsonParser = new();
+    private readonly CsvExporter _csvExporter = new();
 
     public event Action<string>? Log;
     public event Action<double>? Progress;
     public event Action<List<CellResult>>? Completed;
 
-    public BatchProcessor(PythonClient python)
-    {
-        _python = python;
-        _jsonParser = new JsonParser();
-        _csvExporter = new CsvExporter();
-    }
-
     public async Task StartAsync(BatchRequest req, CancellationToken token)
     {
-        // フォルダパスに全角文字が含まれていないかチェック
-        // これは Python, CellPose 側でのエラーを回避するためのもの
+        // 全角パスチェック
         if (req.InputFolder.Any(c => c > 127))
         {
             Log?.Invoke("入力フォルダのパスに全角文字が含まれています。処理を中断します。");
+            Completed?.Invoke([]);
             return;
         }
 
@@ -73,7 +66,6 @@ public class BatchProcessor
 
             try
             {
-                // PythonClient を使う
                 var py = await _python.RunAsync(json, req.TimeoutSeconds, token);
 
                 if (py.IsError)
@@ -83,7 +75,6 @@ public class BatchProcessor
                     continue;
                 }
 
-                // JSON パース
                 var parsed = _jsonParser.Parse(py.RawOutput);
 
                 if (parsed.IsError)

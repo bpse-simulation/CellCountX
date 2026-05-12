@@ -92,7 +92,11 @@ public class MainViewModel : INotifyPropertyChanged
         // イベント購読
         _processor.Log += msg => AppendLog(msg);
         _processor.Progress += v => ProgressValue = v;
-        _processor.Completed += _ => IsRunning = false;
+        _processor.Completed += _ =>
+        {
+            IsRunning = false;
+            AppendLog("処理が完了しました。");
+        };
 
         // コマンド
         BrowseFolderCommand = new RelayCommand(_ => BrowseFolder());
@@ -150,6 +154,9 @@ public class MainViewModel : INotifyPropertyChanged
         };
 
         await _processor.StartAsync(req, _cts.Token);
+
+        // 中断・エラー時もここで UI を復帰
+        IsRunning = false;
     }
 
     // ---------------------------------------------------------
@@ -176,5 +183,4 @@ public class MainViewModel : INotifyPropertyChanged
     {
         AppendLog("CellCountX 起動");
     }
-
 }

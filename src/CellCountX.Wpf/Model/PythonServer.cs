@@ -51,7 +51,7 @@ public class PythonServer
     // ---------------------------------------------------------
     // 「安全な Kill」メソッド
     // ---------------------------------------------------------
-    private void SafeKill(Process? p)
+    private static void SafeKill(Process? p)
     {
         if (p == null)
             return;
@@ -167,8 +167,8 @@ public class PythonServerResult
     public string Output { get; set; } = "";
 
     public static PythonServerResult Success(string output)
-        => new PythonServerResult { IsError = false, Output = output };
+        => new() { IsError = false, Output = output };
 
     public static PythonServerResult Error(string msg)
-        => new PythonServerResult { IsError = true, ErrorMessage = msg };
+        => new() { IsError = true, ErrorMessage = msg };
 }

@@ -78,7 +78,7 @@ def main():
         model = load_model(use_gpu)
 
         # 推論
-        masks, flows, styles = run_inference(model, image)
+        masks, _, _ = run_inference(model, image)
 
         # 出力パス生成
         folder = os.path.dirname(img_path)
