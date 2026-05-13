@@ -8,11 +8,16 @@
     <UseWPF>true</UseWPF>
   </PropertyGroup>
 
-  <PropertyGroup>
-    <AssemblyVersion>0.9.0.0</AssemblyVersion>
-    <FileVersion>0.9.0.0</FileVersion>
-    <InformationalVersion>0.9.0-beta</InformationalVersion>
-  </PropertyGroup>
+  <Target Name="SetVersionFromGit" BeforeTargets="BeforeBuild">
+    <Exec Command="powershell -NoProfile -ExecutionPolicy Bypass -File GetVersion.ps1 > version.txt" />
+    <ReadLinesFromFile File="version.txt">
+      <Output TaskParameter="Lines" PropertyName="GitVersion" />
+    </ReadLinesFromFile>
+
+    <PropertyGroup>
+      <InformationalVersion>$(GitVersion)</InformationalVersion>
+    </PropertyGroup>
+  </Target>
 
   <!-- ============================================================
      Release ビルド時に python-3.10.11-embed-amd64 を読み取り、

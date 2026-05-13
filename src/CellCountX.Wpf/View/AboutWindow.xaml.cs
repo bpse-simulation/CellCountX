@@ -12,9 +12,12 @@ public partial class AboutWindow : Window
     {
         InitializeComponent();
 
-        var asm = Assembly.GetExecutingAssembly();
-        var info = asm.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+        var version = Assembly.GetExecutingAssembly()
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()?
+            .InformationalVersion ?? "unknown";
 
-        VersionText.Text = $"Version {info}";
+        var displayVersion = version.Split('+')[0];
+
+        VersionText.Text = $"Version {displayVersion}";
     }
 }
