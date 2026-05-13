@@ -19,7 +19,7 @@ public class PythonServer
         // ---------------------------------------------------------
         string baseDir = AppContext.BaseDirectory;
 
-        string distPython = Path.Combine(baseDir, "python", "python", "python.exe");
+        string distPython = Path.Combine(baseDir, "python", "python.exe");
         string distServer = Path.Combine(baseDir, "server.py");
 
         if (File.Exists(distPython) && File.Exists(distServer))

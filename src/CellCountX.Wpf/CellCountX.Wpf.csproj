@@ -9,21 +9,70 @@
   </PropertyGroup>
 
   <!-- ============================================================
-       Release ビルド時のみ python/ をコピーする
-       ============================================================ -->
-  <Target Name="CopyPython" AfterTargets="Build" Condition="'$(Configuration)' == 'Release'">
+     Release ビルド時に python-3.10.11-embed-amd64 を読み取り、
+     そのフォルダの python 実行環境を python/ にコピーする
+     ============================================================ -->
+  <Target Name="CopyEmbeddedPython" AfterTargets="Build" Condition="'$(Configuration)' == 'Release'">
     <ItemGroup>
-      <PythonFiles Include="..\CellCountX.Py\**\*" Exclude="..\CellCountX.Py\server.py" />
+      <EmbeddedPythonFiles Include="python-3.10.11-embed-amd64\**\*" />
     </ItemGroup>
 
-    <Copy SourceFiles="@(PythonFiles)" DestinationFolder="$(OutDir)python\%(RecursiveDir)" SkipUnchangedFiles="true" />
+    <Copy
+      SourceFiles="@(EmbeddedPythonFiles)"
+      DestinationFolder="$(OutDir)python\%(RecursiveDir)"
+      SkipUnchangedFiles="true"
+      />
   </Target>
 
   <!-- ============================================================
-       Release ビルド時のみ server.py をコピーする
+       Release ビルド時にテンプレートを _pth としてコピーする
+       ============================================================ -->
+  <Target Name="CopyPthFile" AfterTargets="Build" Condition="'$(Configuration)' == 'Release'">
+    <Copy
+      SourceFiles="python_embed\python310._pth.template"
+      DestinationFiles="$(OutDir)python\python310._pth"
+      OverwriteReadOnlyFiles="true"
+      />
+  </Target>
+
+  <!-- ============================================================
+       Release ビルド時に cellpose/ を python/ にコピーする
+       ============================================================ -->
+  <Target Name="CopyPython" AfterTargets="Build" Condition="'$(Configuration)' == 'Release'">
+    <ItemGroup>
+      <PythonFiles
+        Include="..\CellCountX.Py\cellpose\Lib\**\*"
+        Exclude="..\CellCountX.Py\cellpose\pyvenv.cfg;..\CellCountX.Py\cellpose\.gitignore"
+        />
+    </ItemGroup>
+
+    <Copy
+      SourceFiles="@(PythonFiles)"
+      DestinationFolder="$(OutDir)python\%(RecursiveDir)"
+      SkipUnchangedFiles="true"
+      />
+  </Target>
+
+  <!-- ============================================================
+       Release ビルド時に server.py をコピーする
        ============================================================ -->
   <Target Name="CopyServerPy" AfterTargets="Build" Condition="'$(Configuration)' == 'Release'">
-    <Copy SourceFiles="..\CellCountX.Py\server.py" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+    <Copy
+      SourceFiles="..\CellCountX.Py\server.py"
+      DestinationFolder="$(OutDir)"
+      SkipUnchangedFiles="true"
+      />
+  </Target>
+
+  <!-- ============================================================
+     Release クリーン時に python/ と server.py を削除する
+     ============================================================ -->
+  <Target Name="CleanCopiedPython" BeforeTargets="Clean" Condition="'$(Configuration)' == 'Release'">
+    <!-- python フォルダを削除 -->
+    <RemoveDir Directories="$(OutDir)python" />
+
+    <!-- server.py を削除 -->
+    <Delete Files="$(OutDir)server.py" />
   </Target>
 
 </Project>
