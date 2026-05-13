@@ -5,6 +5,9 @@ on:
     tags:
       - 'v*'   # v1.0.0 や v0.9.0-beta などのタグでビルド
 
+permissions:
+  contents: write   # ← Release 作成に必須
+
 jobs:
   build:
     runs-on: windows-latest
@@ -28,13 +31,13 @@ jobs:
 
       - name: Replace InformationalVersion in csproj
         run: |
-          (Get-Content CellCountX.Wpf/CellCountX.Wpf.csproj) `
+          (Get-Content src/CellCountX.Wpf/CellCountX.Wpf.csproj) `
             -replace '<InformationalVersion>.*</InformationalVersion>',
                      "<InformationalVersion>${{ steps.get_version.outputs.version }}</InformationalVersion>" `
-            | Set-Content CellCountX.Wpf/CellCountX.Wpf.csproj
+            | Set-Content src/CellCountX.Wpf/CellCountX.Wpf.csproj
 
       - name: Publish
-        run: dotnet publish CellCountX.Wpf/CellCountX.Wpf.csproj -c Release -o publish
+        run: dotnet publish src/CellCountX.Wpf/CellCountX.Wpf.csproj -c Release -o publish
 
       - name: Zip output
         run: |
