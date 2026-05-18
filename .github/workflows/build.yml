@@ -6,7 +6,7 @@ on:
       - 'v*'   # v1.0.0 や v0.9.0-beta などのタグでビルド
 
 permissions:
-  contents: write   # ← Release 作成に必須
+  contents: write   # Release 作成に必須
 
 jobs:
   build:
@@ -21,7 +21,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0.x'
+          dotnet-version: '10.0.x'
 
       - name: Get version from tag
         id: get_version
@@ -29,6 +29,47 @@ jobs:
           $tag = git describe --tags --abbrev=0
           echo "version=$tag" >> $env:GITHUB_OUTPUT
 
+      # ---------------------------------------------
+      # python-runtime（4つの独立 zip）を Pre-release から取得
+      # ---------------------------------------------
+      - name: Download python embed
+        run: |
+          curl -L -o python-embed.zip `
+            https://github.com/bpse-simulation/CellCountX/releases/download/python-runtime/python-3.10.11-embed-amd64.zip
+
+      - name: Download python cp
+        run: |
+          curl -L -o python-cp.zip `
+            https://github.com/bpse-simulation/CellCountX/releases/download/python-runtime/python-cp.zip
+
+      - name: Download python torch
+        run: |
+          curl -L -o python-torch.zip `
+            https://github.com/bpse-simulation/CellCountX/releases/download/python-runtime/python-torch.zip
+
+      - name: Download python torch cuda
+        run: |
+          curl -L -o python-torch-cuda.zip `
+            https://github.com/bpse-simulation/CellCountX/releases/download/python-runtime/python-torch_cuda.zip
+
+      # ---------------------------------------------
+      # zip を個別に展開して python/ に統合（7z 使用）
+      # ---------------------------------------------
+      - name: Extract python embed
+        run: 7z x python-embed.zip -opython
+
+      - name: Extract python cp
+        run: 7z x python-cp.zip -opython
+
+      - name: Extract python torch
+        run: 7z x python-torch.zip -opython
+
+      - name: Extract python torch cuda
+        run: 7z x python-torch-cuda.zip -opython
+
+      # ---------------------------------------------
+      # csproj の InformationalVersion を書き換え
+      # ---------------------------------------------
       - name: Replace InformationalVersion in csproj
         run: |
           (Get-Content src/CellCountX.Wpf/CellCountX.Wpf.csproj) `
@@ -36,14 +77,30 @@ jobs:
                      "<InformationalVersion>${{ steps.get_version.outputs.version }}</InformationalVersion>" `
             | Set-Content src/CellCountX.Wpf/CellCountX.Wpf.csproj
 
+      # ---------------------------------------------
+      # Publish（python/ は後で手動コピー）
+      # ---------------------------------------------
       - name: Publish
         run: dotnet publish src/CellCountX.Wpf/CellCountX.Wpf.csproj -c Release -o publish
 
-      - name: Zip output
+      # ---------------------------------------------
+      # python runtime を publish に含める（プロジェクト外 → publish へコピー）
+      # ---------------------------------------------
+      - name: Copy python runtime into publish folder
         run: |
-          Compress-Archive -Path publish/* -DestinationPath CellCountX-${{ steps.get_version.outputs.version }}.zip
+          Copy-Item -Path python -Destination publish/python -Recurse
 
+      # ---------------------------------------------
+      # 出力を分割 zip 化（1ファイル最大 1900MB）
+      # ---------------------------------------------
+      - name: Create split zip (max 1900MB per file)
+        run: |
+          7z a -tzip -v1900m CellCountX-${{ steps.get_version.outputs.version }}.zip publish/*
+
+      # ---------------------------------------------
+      # Release にアップロード（分割ファイルすべて）
+      # ---------------------------------------------
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v2
         with:
-          files: CellCountX-${{ steps.get_version.outputs.version }}.zip
+          files: CellCountX-${{ steps.get_version.outputs.version }}.zip*
