@@ -8,6 +8,9 @@ import torch
 from cellpose import models
 from cellpose.io import imread
 
+# 死細胞除去フィルタ
+from deadcell_filter import remove_dead_cells
+
 # ---------------------------------------------------------
 # tqdm の stderr を無効化する
 # ---------------------------------------------------------
@@ -39,7 +42,7 @@ def load_model(use_gpu: bool):
 # ---------------------------------------------------------
 def run_inference(model, image):
     with suppress_stderr():
-        return model.eval(image)
+        return model.eval(image, channels=[0, 0])
 
 # ---------------------------------------------------------
 # JSON 入力を読み取る
@@ -59,7 +62,6 @@ def main():
     try:
         data = read_input()
 
-        # 入力バリデーション
         if "path" not in data:
             raise ValueError("missing 'path' in input JSON")
 
@@ -70,6 +72,11 @@ def main():
         # 画像読み込み
         image = imread(img_path)
 
+        # ★ image が RGB の場合は 2D に変換
+        if image.ndim == 3:
+            # 平均化（または任意のチャネルを使用）
+            image = image.mean(axis=2)
+
         # GPU 判定
         request_gpu = data.get("gpu", False)
         use_gpu = bool(request_gpu) and can_use_gpu()
@@ -77,8 +84,33 @@ def main():
         # モデルロード
         model = load_model(use_gpu)
 
-        # 推論
-        masks, _, _ = run_inference(model, image)
+        # Cellpose 推論
+        masks, flows, styles = run_inference(model, image)
+
+        # Cellpose の元の細胞数
+        original_count = int(masks.max())
+
+        # masks が (H, W, 1) の場合は 2D に変換
+        if masks.ndim == 3 and masks.shape[-1] == 1:
+            masks = masks[:, :, 0]
+
+        # ---------------------------------------------------------
+        # 死細胞除去（後処理）
+        # ---------------------------------------------------------
+        remove_dead = data.get("remove_dead", False)
+
+        if remove_dead:
+            params = {
+                "min_area": data.get("min_area", 50),
+                "max_circularity": data.get("max_circularity", 0.85),
+                "max_intensity": data.get("max_intensity", 0.6),
+                "min_variance": data.get("min_variance", 50)
+            }
+
+            masks = remove_dead_cells(masks, image, **params)
+
+        # 死細胞除去後の細胞数
+        filtered_count = int(masks.max())
 
         # 出力パス生成
         folder = os.path.dirname(img_path)
@@ -89,19 +121,21 @@ def main():
         mask_path = os.path.join(output_folder, f"{base}_cp_masks.tif")
         tifffile.imwrite(mask_path, masks.astype("uint16"))
 
+        # ---------------------------------------------------------
         # 結果返却
+        # ---------------------------------------------------------
         result = {
-            "count": int(masks.max()),
+            "count": original_count,          # ★ Cellpose の元の細胞数
+            "filtered_count": filtered_count, # ★ 死細胞除去後の細胞数
             "gpu_used": use_gpu,
-            "mask_path": mask_path
+            "mask_path": mask_path,
+            "dead_removed": remove_dead
         }
+
         print(json.dumps(result), flush=True)
 
     except Exception as e:
-        # 内部ログは stderr に出す（C# 側には返さない）
         print(f"[ERROR] {repr(e)}", file=sys.stderr, flush=True)
-
-        # C# 側には JSON で返す
         print(json.dumps({"error": str(e)}), flush=True)
 
 

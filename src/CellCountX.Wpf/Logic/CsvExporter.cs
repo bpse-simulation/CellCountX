@@ -14,14 +14,15 @@ public class CsvExporter
 
         var lines = new List<string>
         {
-            "FileName,CellCount"
+            "FileName,CellCount,FilteredCellCount"
         };
 
         foreach (var r in results)
         {
             string file = Escape(r.FileName);
             string count = r.CellCount.ToString();
-            lines.Add($"{file},{count}");
+            string filteredCount = r.FilteredCellCount.ToString();
+            lines.Add($"{file},{count},{filteredCount}");
         }
 
         File.WriteAllLines(csvPath, lines, Encoding.UTF8);

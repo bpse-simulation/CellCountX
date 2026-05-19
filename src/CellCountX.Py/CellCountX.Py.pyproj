@@ -23,6 +23,7 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="deadcell_filter.py" />
     <Compile Include="server.py" />
   </ItemGroup>
   <ItemGroup>

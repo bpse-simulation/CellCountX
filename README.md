@@ -223,6 +223,8 @@ cellpose\Scripts\activate
 ```
 pip install cellpose
 pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu126
+pip install packaging
+pip install -U scikit-image # ← 死細胞除去フィルタで必要
 ```
 
 ## 🛠️ 開発者向け：Release ビルドの自動化

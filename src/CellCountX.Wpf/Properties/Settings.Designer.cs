@@ -46,5 +46,65 @@ namespace CellCountX.Wpf.Properties {
                 this["TimeoutSeconds"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public int MinArea {
+            get {
+                return ((int)(this["MinArea"]));
+            }
+            set {
+                this["MinArea"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("1")]
+        public double MaxCircularity {
+            get {
+                return ((double)(this["MaxCircularity"]));
+            }
+            set {
+                this["MaxCircularity"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("255")]
+        public double MaxIntensity {
+            get {
+                return ((double)(this["MaxIntensity"]));
+            }
+            set {
+                this["MaxIntensity"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public double MinVariance {
+            get {
+                return ((double)(this["MinVariance"]));
+            }
+            set {
+                this["MinVariance"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool RemoveDeadCells {
+            get {
+                return ((bool)(this["RemoveDeadCells"]));
+            }
+            set {
+                this["RemoveDeadCells"] = value;
+            }
+        }
     }
 }
