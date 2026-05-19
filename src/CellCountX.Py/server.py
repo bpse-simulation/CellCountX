@@ -8,6 +8,9 @@ import torch
 from cellpose import models
 from cellpose.io import imread
 
+# server.py のあるディレクトリを import パスに追加
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
 # 死細胞除去フィルタ
 from deadcell_filter import remove_dead_cells
 
