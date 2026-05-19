@@ -54,8 +54,7 @@ jobs:
       # python.zip を展開（7z.exe のフルパス使用）
       # ---------------------------------------------
       - name: Extract python-runtime
-        run: |
-          "C:\Program Files\7-Zip\7z.exe" x python.zip -opython
+        run: 7z x python.zip -opython
 
       # ---------------------------------------------
       # csproj の InformationalVersion を書き換え
@@ -99,7 +98,7 @@ jobs:
       # ---------------------------------------------
       - name: Create split zip (max 1900MB per file)
         run: |
-          "C:\Program Files\7-Zip\7z.exe" a -tzip -v1900m CellCountX-${{ steps.get_version.outputs.version }}.zip publish\*
+          7z a -tzip -v1900m CellCountX-${{ steps.get_version.outputs.version }}.zip publish\*
 
       # ---------------------------------------------
       # Release にアップロード（分割ファイルすべて）
