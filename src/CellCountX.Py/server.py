@@ -5,8 +5,16 @@ import warnings
 import contextlib
 import tifffile
 import torch
+import numpy as np
 from cellpose import models
 from cellpose.io import imread
+from scipy.ndimage import binary_erosion
+
+# server.py のあるディレクトリを import パスに追加
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+# 死細胞除去フィルタ
+from deadcell_filter import remove_dead_cells
 
 # ---------------------------------------------------------
 # tqdm の stderr を無効化する
@@ -39,7 +47,7 @@ def load_model(use_gpu: bool):
 # ---------------------------------------------------------
 def run_inference(model, image):
     with suppress_stderr():
-        return model.eval(image)
+        return model.eval(image, channels=[0, 0])
 
 # ---------------------------------------------------------
 # JSON 入力を読み取る
@@ -51,6 +59,34 @@ def read_input():
     return json.loads(line)
 
 # ---------------------------------------------------------
+# マスク輪郭を赤色で重ねた画像を生成
+# ---------------------------------------------------------
+def create_overlay(image, masks):
+    # image を RGB に変換
+    if image.ndim == 2:
+        rgb = np.stack([image, image, image], axis=-1)
+    else:
+        rgb = image.copy()
+
+    rgb = rgb.astype(np.float32)
+    rgb = rgb / (rgb.max() + 1e-6)  # 正規化
+    rgb = (rgb * 255).clip(0, 255).astype(np.uint8)
+
+    # 輪郭抽出
+    boundaries = np.zeros_like(masks, dtype=bool)
+    for label in range(1, masks.max() + 1):
+        cell = (masks == label)
+        eroded = binary_erosion(cell)
+        boundary = cell ^ eroded
+        boundaries |= boundary
+
+    # 赤色で描画
+    overlay = rgb.copy()
+    overlay[boundaries] = [255, 0, 0]
+
+    return overlay
+
+# ---------------------------------------------------------
 # メイン処理
 # ---------------------------------------------------------
 def main():
@@ -59,7 +95,6 @@ def main():
     try:
         data = read_input()
 
-        # 入力バリデーション
         if "path" not in data:
             raise ValueError("missing 'path' in input JSON")
 
@@ -70,6 +105,12 @@ def main():
         # 画像読み込み
         image = imread(img_path)
 
+        # ★ image が RGB の場合は 2D に変換
+        if image.ndim == 3:
+            image_gray = image.mean(axis=2)
+        else:
+            image_gray = image
+
         # GPU 判定
         request_gpu = data.get("gpu", False)
         use_gpu = bool(request_gpu) and can_use_gpu()
@@ -77,8 +118,33 @@ def main():
         # モデルロード
         model = load_model(use_gpu)
 
-        # 推論
-        masks, _, _ = run_inference(model, image)
+        # Cellpose 推論
+        masks, flows, styles = run_inference(model, image_gray)
+
+        # Cellpose の元の細胞数
+        original_count = int(masks.max())
+
+        # masks が (H, W, 1) の場合は 2D に変換
+        if masks.ndim == 3 and masks.shape[-1] == 1:
+            masks = masks[:, :, 0]
+
+        # ---------------------------------------------------------
+        # 死細胞除去（後処理）
+        # ---------------------------------------------------------
+        remove_dead = data.get("remove_dead", False)
+
+        if remove_dead:
+            params = {
+                "min_area": data.get("min_area", 50),
+                "max_circularity": data.get("max_circularity", 0.85),
+                "max_intensity": data.get("max_intensity", 0.6),
+                "min_variance": data.get("min_variance", 50)
+            }
+
+            masks = remove_dead_cells(masks, image_gray, **params)
+
+        # 死細胞除去後の細胞数
+        filtered_count = int(masks.max())
 
         # 出力パス生成
         folder = os.path.dirname(img_path)
@@ -86,22 +152,33 @@ def main():
         output_folder = data.get("output", folder)
         os.makedirs(output_folder, exist_ok=True)
 
+        # マスク保存
         mask_path = os.path.join(output_folder, f"{base}_cp_masks.tif")
         tifffile.imwrite(mask_path, masks.astype("uint16"))
 
+        # ---------------------------------------------------------
+        # ★ 輪郭オーバーレイ画像を生成して保存
+        # ---------------------------------------------------------
+        overlay = create_overlay(image_gray, masks)
+        overlay_path = os.path.join(output_folder, f"{base}_overlay.png")
+        tifffile.imwrite(overlay_path, overlay)
+
+        # ---------------------------------------------------------
         # 結果返却
+        # ---------------------------------------------------------
         result = {
-            "count": int(masks.max()),
+            "count": original_count,
+            "filtered_count": filtered_count,
             "gpu_used": use_gpu,
-            "mask_path": mask_path
+            "mask_path": mask_path,
+            "overlay_path": overlay_path,
+            "dead_removed": remove_dead
         }
+
         print(json.dumps(result), flush=True)
 
     except Exception as e:
-        # 内部ログは stderr に出す（C# 側には返さない）
         print(f"[ERROR] {repr(e)}", file=sys.stderr, flush=True)
-
-        # C# 側には JSON で返す
         print(json.dumps({"error": str(e)}), flush=True)
 
 

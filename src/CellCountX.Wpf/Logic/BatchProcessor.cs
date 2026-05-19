@@ -55,17 +55,26 @@ public class BatchProcessor(PythonClient python)
 
             Log?.Invoke($"処理中: {Path.GetFileName(file)}");
 
+            // ★ Python に渡す JSON
             var payload = new
             {
                 path = file,
                 gpu = req.UseGpu,
-                output = req.OutputFolder
+                output = req.OutputFolder,
+
+                // 死細胞除去パラメータ
+                remove_dead = req.RemoveDeadCells,
+                min_area = req.MinArea,
+                max_circularity = req.MaxCircularity,
+                max_intensity = req.MaxIntensity,
+                min_variance = req.MinVariance
             };
 
             string json = JsonSerializer.Serialize(payload);
 
             try
             {
+                // ★ タイムアウトは PythonClient が一元管理
                 var py = await _python.RunAsync(json, req.TimeoutSeconds, token);
 
                 if (py.IsError)
@@ -84,16 +93,19 @@ public class BatchProcessor(PythonClient python)
                     continue;
                 }
 
+                // ★ CellResult に死細胞除去後の細胞数を追加
                 results.Add(new CellResult
                 {
                     FileName = Path.GetFileName(file),
-                    CellCount = parsed.Count
+                    CellCount = parsed.Count,
+                    FilteredCellCount = parsed.FilteredCount,
                 });
 
-                Log?.Invoke($"結果: {parsed.Count}");
+                Log?.Invoke($"結果: {parsed.Count} → フィルタ後: {parsed.FilteredCount}");
             }
             catch (Exception ex)
             {
+                // ★ PythonClient 内部例外（Kill 失敗など）もここで拾う
                 Log?.Invoke($"例外: {ex.Message}");
             }
 
@@ -102,7 +114,9 @@ public class BatchProcessor(PythonClient python)
 
         Progress?.Invoke(100);
 
+        // ★ CSV に FilteredCellCount を含めて保存
         _csvExporter.Save(results, req.OutputFolder);
+
         Log?.Invoke("バッチ処理完了");
 
         Completed?.Invoke(results);

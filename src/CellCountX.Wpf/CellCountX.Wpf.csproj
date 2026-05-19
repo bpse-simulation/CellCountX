@@ -9,104 +9,140 @@
     <ApplicationIcon>favicon_bpse.ico</ApplicationIcon>
   </PropertyGroup>
 
-  <!-- ============================
-       Release ビルド時（Build）
-       ============================ -->
-  <Target Name="CopyPythonOnBuild" AfterTargets="Build" Condition="'$(Configuration)' == 'Release'">
-    <ItemGroup>
-      <EmbeddedPythonFiles Include="python-3.10.11-embed-amd64\**\*" />
-      <PythonFiles Include="..\CellCountX.Py\cellpose\Lib\**\*" Exclude="..\CellCountX.Py\cellpose\pyvenv.cfg;..\CellCountX.Py\cellpose\.gitignore" />
-    </ItemGroup>
-
-    <Copy SourceFiles="@(EmbeddedPythonFiles)" DestinationFolder="$(OutDir)python\%(RecursiveDir)" />
-    <Copy SourceFiles="@(PythonFiles)" DestinationFolder="$(OutDir)python\%(RecursiveDir)" />
-
-    <Copy SourceFiles="python_embed\python310._pth.template" DestinationFiles="$(OutDir)python\python310._pth" />
-
-    <Copy SourceFiles="..\CellCountX.Py\server.py" DestinationFolder="$(OutDir)" />
-  </Target>
+  <!-- ZIP ファイルを Item として定義 -->
+  <ItemGroup>
+    <PythonZip Include="python-3.10.11-embed-amd64.zip" />
+  </ItemGroup>
 
   <!-- ============================
-       Publish 時（dotnet publish）
+       ZIP 展開（Build / Publish 共通）
        ============================ -->
-  <Target Name="CopyPythonOnPublish" AfterTargets="Publish" Condition="'$(Configuration)' == 'Release'">
+  <Target Name="ExtractPythonZip"
+          BeforeTargets="CopyPythonOnBuild;CopyPythonOnPublish"
+          Condition="'$(Configuration)' == 'Release'">
+
+    <!-- ZIP と同名フォルダを展開先にする -->
+    <PropertyGroup>
+      <PythonExtractDir>$(IntermediateOutputPath)%(PythonZip.Filename)\</PythonExtractDir>
+    </PropertyGroup>
+
+    <MakeDir Directories="$(PythonExtractDir)" />
+
+    <Unzip SourceFiles="@(PythonZip)"
+           DestinationFolder="$(PythonExtractDir)" />
+  </Target>
+
+  <!-- ============================
+       Build 時のコピー
+       ============================ -->
+  <Target Name="CopyPythonOnBuild"
+          AfterTargets="Build"
+          Condition="'$(Configuration)' == 'Release'">
+
     <ItemGroup>
-      <EmbeddedPythonFiles Include="python-3.10.11-embed-amd64\**\*" />
-      <PythonFiles Include="..\CellCountX.Py\cellpose\Lib\**\*" Exclude="..\CellCountX.Py\cellpose\pyvenv.cfg;..\CellCountX.Py\cellpose\.gitignore" />
+      <!-- 展開された Python -->
+      <ExtractedPythonFiles Include="$(PythonExtractDir)**\*" />
+
+      <!-- cellpose ライブラリ -->
+      <PythonFiles Include="..\CellCountX.Py\cellpose\Lib\**\*"
+                   Exclude="..\CellCountX.Py\cellpose\pyvenv.cfg;7
+                            ..\CellCountX.Py\cellpose\.gitignore" />
     </ItemGroup>
 
-    <Copy SourceFiles="@(EmbeddedPythonFiles)" DestinationFolder="$(PublishDir)python\%(RecursiveDir)" />
-    <Copy SourceFiles="@(PythonFiles)" DestinationFolder="$(PublishDir)python\%(RecursiveDir)" />
+    <!-- 展開した Python をコピー -->
+    <Copy SourceFiles="@(ExtractedPythonFiles)"
+          DestinationFolder="$(OutDir)python\%(RecursiveDir)" />
 
-    <Copy SourceFiles="python_embed\python310._pth.template" DestinationFiles="$(PublishDir)python\python310._pth" />
+    <!-- cellpose ライブラリ -->
+    <Copy SourceFiles="@(PythonFiles)"
+          DestinationFolder="$(OutDir)python\%(RecursiveDir)" />
 
-    <Copy SourceFiles="..\CellCountX.Py\server.py" DestinationFolder="$(PublishDir)" />
+    <!-- pth -->
+    <Copy SourceFiles="python_embed\python310._pth.template"
+          DestinationFiles="$(OutDir)python\python310._pth" />
+
+    <!-- server.py -->
+    <Copy SourceFiles="..\CellCountX.Py\server.py"
+          DestinationFolder="$(OutDir)" />
+
+    <!-- deadcell_filter.py -->
+    <Copy SourceFiles="..\CellCountX.Py\deadcell_filter.py"
+          DestinationFolder="$(OutDir)" />
   </Target>
-  
-  <!-- ============================================================
-       _pth ファイルをコピー（Build）
-       ============================================================ -->
-  <Target Name="CopyPthFile" AfterTargets="Build" Condition="'$(Configuration)' == 'Release'">
-    <Copy SourceFiles="python_embed\python310._pth.template" DestinationFiles="$(OutDir)python\python310._pth" OverwriteReadOnlyFiles="true" />
-  </Target>
 
-  <!-- ============================================================
-       _pth ファイルをコピー（dotnet publish）
-       ============================================================ -->
-  <Target Name="CopyPthFile" AfterTargets="Publish" Condition="'$(Configuration)' == 'Release'">
-    <Copy SourceFiles="python_embed\python310._pth.template" DestinationFiles="$(PublishDir)python\python310._pth" OverwriteReadOnlyFiles="true" />
-  </Target>
+  <!-- ============================
+       Publish 時のコピー
+       ============================ -->
+  <Target Name="CopyPythonOnPublish"
+          AfterTargets="Publish"
+          Condition="'$(Configuration)' == 'Release'">
 
-  <!-- ============================================================
-       cellpose (site-packages 相当) をコピー（Build）
-       ============================================================ -->
-  <Target Name="CopyPython" AfterTargets="Build" Condition="'$(Configuration)' == 'Release'">
     <ItemGroup>
-      <PythonFiles Include="..\CellCountX.Py\cellpose\Lib\**\*" Exclude="..\CellCountX.Py\cellpose\pyvenv.cfg;..\CellCountX.Py\cellpose\.gitignore" />
+      <ExtractedPythonFiles Include="$(PythonExtractDir)**\*" />
+      <PythonFiles Include="..\CellCountX.Py\cellpose\Lib\**\*"
+                   Exclude="..\CellCountX.Py\cellpose\pyvenv.cfg;
+                            ..\CellCountX.Py\cellpose\.gitignore" />
     </ItemGroup>
 
-    <Copy SourceFiles="@(PythonFiles)" DestinationFolder="$(OutDir)python\%(RecursiveDir)" SkipUnchangedFiles="true" />
+    <!-- 展開した Python をコピー -->
+    <Copy SourceFiles="@(ExtractedPythonFiles)"
+          DestinationFolder="$(PublishDir)python\%(RecursiveDir)" />
+
+    <!-- cellpose ライブラリ -->
+    <Copy SourceFiles="@(PythonFiles)"
+          DestinationFolder="$(PublishDir)python\%(RecursiveDir)" />
+
+    <!-- pth -->
+    <Copy SourceFiles="python_embed\python310._pth.template"
+          DestinationFiles="$(PublishDir)python\python310._pth" />
+
+    <!-- server.py -->
+    <Copy SourceFiles="..\CellCountX.Py\server.py"
+          DestinationFolder="$(PublishDir)" />
+
+    <!-- deadcell_filter.py -->
+    <Copy SourceFiles="..\CellCountX.Py\deadcell_filter.py"
+          DestinationFolder="$(PublishDir)" />
   </Target>
 
-  <!-- ============================================================
-       cellpose (site-packages 相当) をコピー（dotnet publish）
-       ============================================================ -->
-  <Target Name="CopyPython" AfterTargets="Publish" Condition="'$(Configuration)' == 'Release'">
-    <ItemGroup>
-      <PythonFiles Include="..\CellCountX.Py\cellpose\Lib\**\*" Exclude="..\CellCountX.Py\cellpose\pyvenv.cfg;..\CellCountX.Py\cellpose\.gitignore" />
-    </ItemGroup>
+  <!-- ============================
+       Clean 時に python/ と server.py と deadcell_filter.py を削除
+       ============================ -->
+  <Target Name="CleanCopiedPython"
+          BeforeTargets="Clean"
+          Condition="'$(Configuration)' == 'Release'">
 
-    <Copy SourceFiles="@(PythonFiles)" DestinationFolder="$(PublishDir)python\%(RecursiveDir)" SkipUnchangedFiles="true" />
-  </Target>
-
-  <!-- ============================================================
-       server.py をコピー（Build）
-       ============================================================ -->
-  <Target Name="CopyServerPy" AfterTargets="Build" Condition="'$(Configuration)' == 'Release'">
-    <Copy SourceFiles="..\CellCountX.Py\server.py" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
-  </Target>
-
-  <!-- ============================================================
-       server.py をコピー（dotnet publish）
-       ============================================================ -->
-  <Target Name="CopyServerPy" AfterTargets="Publish" Condition="'$(Configuration)' == 'Release'">
-    <Copy SourceFiles="..\CellCountX.Py\server.py" DestinationFolder="$(PublishDir)" SkipUnchangedFiles="true" />
-  </Target>
-
-  <!-- ============================================================
-       Clean 時に python/ と server.py を削除
-       ============================================================ -->
-  <Target Name="CleanCopiedPython" BeforeTargets="Clean" Condition="'$(Configuration)' == 'Release'">
+    <!-- Build 出力 -->
     <RemoveDir Directories="$(OutDir)python" />
     <Delete Files="$(OutDir)server.py" />
+    <Delete Files="$(OutDir)deadcell_filter.py" />
 
+    <!-- Publish 出力 -->
     <RemoveDir Directories="$(PublishDir)python" />
     <Delete Files="$(PublishDir)server.py" />
-
-    <RemoveDir Directories="$(PublishDir)" />
+    <Delete Files="$(PublishDir)deadcell_filter.py" />
   </Target>
+
+  <!-- ============================
+       アイコン
+       ============================ -->
   <ItemGroup>
     <Content Include="favicon_bpse.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Properties\Settings.Designer.cs">
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>Settings.settings</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
   </ItemGroup>
 
 </Project>

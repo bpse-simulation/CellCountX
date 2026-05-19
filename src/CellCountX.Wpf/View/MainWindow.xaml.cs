@@ -35,15 +35,20 @@ public partial class MainWindow : Window
     }
 
     // ---------------------------------------------------------
-    // Window Closing - 実行中ならキャンセルしてから閉じる
+    // Window Closing - 設定保存 & 実行中ならキャンセル
     // ---------------------------------------------------------
     protected override void OnClosing(CancelEventArgs e)
     {
         if (DataContext is MainViewModel vm)
         {
+            // 設定保存
+            Properties.Settings.Default.UseGpu = vm.UseGpu;
+            Properties.Settings.Default.TimeoutSeconds = vm.TimeoutSeconds;
+            Properties.Settings.Default.Save();
+
+            // 実行中ならキャンセルして Python プロセスを Kill
             if (vm.IsRunning)
             {
-                // 実行中ならキャンセルして Python プロセスを Kill
                 vm.CancelBatchCommand.Execute(null);
             }
         }
@@ -92,6 +97,27 @@ public partial class MainWindow : Window
 
         // ウィンドウを閉じる
         this.Close();
+    }
+
+    // -----------------------------
+    // 詳細設定ウィンドウを開く
+    // -----------------------------
+    private void OpenAdvancedSettings(object sender, RoutedEventArgs e)
+    {
+        var dlg = new AdvancedSettingsWindow
+        {
+            Owner = this
+        };
+
+        if (dlg.ShowDialog() == true)
+        {
+            // 設定が保存されたので ViewModel に反映
+            if (DataContext is MainViewModel vm)
+            {
+                var saved = Properties.Settings.Default.TimeoutSeconds;
+                vm.TimeoutSeconds = saved > 0 ? saved : vm.GetAutoTimeout(vm.UseGpu);
+            }
+        }
     }
 
     // -----------------------------

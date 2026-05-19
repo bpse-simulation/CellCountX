@@ -23,6 +23,9 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
+      # ---------------------------------------------
+      # Git タグからバージョン文字列を取得
+      # ---------------------------------------------
       - name: Get version from tag
         id: get_version
         run: |
@@ -30,52 +33,51 @@ jobs:
           echo "version=$tag" >> $env:GITHUB_OUTPUT
 
       # ---------------------------------------------
-      # python-runtime（4つの独立 zip）を Pre-release から取得
+      # python-runtime（分割 zip）を Pre-release から取得
       # ---------------------------------------------
-      - name: Download python embed
+      - name: Download python-runtime part1
         run: |
-          curl -L -o python-embed.zip `
-            https://github.com/bpse-simulation/CellCountX/releases/download/python-runtime/python-3.10.11-embed-amd64.zip
+          curl -L -o python.zip.001 `
+            https://github.com/bpse-simulation/CellCountX/releases/download/python-runtime/python.zip.001
 
-      - name: Download python cp
+      - name: Download python-runtime part2
         run: |
-          curl -L -o python-cp.zip `
-            https://github.com/bpse-simulation/CellCountX/releases/download/python-runtime/python-cp.zip
-
-      - name: Download python torch
-        run: |
-          curl -L -o python-torch.zip `
-            https://github.com/bpse-simulation/CellCountX/releases/download/python-runtime/python-torch.zip
-
-      - name: Download python torch cuda
-        run: |
-          curl -L -o python-torch-cuda.zip `
-            https://github.com/bpse-simulation/CellCountX/releases/download/python-runtime/python-torch_cuda.zip
+          curl -L -o python.zip.002 `
+            https://github.com/bpse-simulation/CellCountX/releases/download/python-runtime/python.zip.002
 
       # ---------------------------------------------
-      # zip を個別に展開して python/ に統合（7z 使用）
+      # 分割 zip を結合（cmd.exe）
       # ---------------------------------------------
-      - name: Extract python embed
-        run: 7z x python-embed.zip -opython
+      - name: Combine python-runtime zip
+        shell: cmd
+        run: |
+          copy /b python.zip.001 + python.zip.002 python.zip
 
-      - name: Extract python cp
-        run: 7z x python-cp.zip -opython
-
-      - name: Extract python torch
-        run: 7z x python-torch.zip -opython
-
-      - name: Extract python torch cuda
-        run: 7z x python-torch-cuda.zip -opython
+      # ---------------------------------------------
+      # python.zip を展開（7z）
+      # ---------------------------------------------
+      - name: Extract python-runtime
+        run: 7z x python.zip -opython
 
       # ---------------------------------------------
       # csproj の InformationalVersion を書き換え
       # ---------------------------------------------
       - name: Replace InformationalVersion in csproj
         run: |
-          (Get-Content src/CellCountX.Wpf/CellCountX.Wpf.csproj) `
-            -replace '<InformationalVersion>.*</InformationalVersion>',
-                     "<InformationalVersion>${{ steps.get_version.outputs.version }}</InformationalVersion>" `
-            | Set-Content src/CellCountX.Wpf/CellCountX.Wpf.csproj
+          $version = "${{ steps.get_version.outputs.version }}"
+          $path = "src/CellCountX.Wpf/CellCountX.Wpf.csproj"
+
+          $xml = Get-Content $path
+
+          # InformationalVersion が存在しない場合は追加
+          if ($xml -notmatch "InformationalVersion") {
+            $xml = $xml -replace "</PropertyGroup>", "  <InformationalVersion>$version</InformationalVersion>`n</PropertyGroup>"
+          }
+          else {
+            $xml = $xml -replace "<InformationalVersion>.*</InformationalVersion>", "<InformationalVersion>$version</InformationalVersion>"
+          }
+
+          $xml | Set-Content $path -Encoding UTF8
 
       # ---------------------------------------------
       # Publish（python/ は後で手動コピー）
@@ -84,18 +86,33 @@ jobs:
         run: dotnet publish src/CellCountX.Wpf/CellCountX.Wpf.csproj -c Release -o publish
 
       # ---------------------------------------------
-      # python runtime を publish に含める（プロジェクト外 → publish へコピー）
+      # python runtime を publish に含める
       # ---------------------------------------------
       - name: Copy python runtime into publish folder
         run: |
           Copy-Item -Path python -Destination publish/python -Recurse
 
       # ---------------------------------------------
+      # Release ノート自動生成
+      # ---------------------------------------------
+      - name: Generate release notes
+        id: notes
+        run: |
+          $current = "${{ steps.get_version.outputs.version }}"
+          $prev = git describe --tags --abbrev=0 $current^
+          $log = git log $prev..$current --pretty=format:"- %s (%h)"
+          $body = "## Changes in $current`n`n$log`n`n_Automatically generated from commit history._"
+          $body | Out-File release_notes.txt -Encoding utf8
+          echo "body<<EOF" >> $env:GITHUB_OUTPUT
+          Get-Content release_notes.txt >> $env:GITHUB_OUTPUT
+          echo "EOF" >> $env:GITHUB_OUTPUT
+
+      # ---------------------------------------------
       # 出力を分割 zip 化（1ファイル最大 1900MB）
       # ---------------------------------------------
       - name: Create split zip (max 1900MB per file)
         run: |
-          7z a -tzip -v1900m CellCountX-${{ steps.get_version.outputs.version }}.zip publish/*
+          7z a -tzip -v1900m CellCountX-${{ steps.get_version.outputs.version }}.zip publish\*
 
       # ---------------------------------------------
       # Release にアップロード（分割ファイルすべて）
@@ -104,3 +121,4 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: CellCountX-${{ steps.get_version.outputs.version }}.zip*
+          body: ${{ steps.notes.outputs.body }}

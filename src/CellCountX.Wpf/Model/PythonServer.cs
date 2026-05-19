@@ -53,18 +53,14 @@ public class PythonServer
     // ---------------------------------------------------------
     private static void SafeKill(Process? p)
     {
-        if (p == null)
-            return;
+        if (p == null) return;
 
         try
         {
             if (!p.HasExited)
-                p.Kill(entireProcessTree: true); // 子プロセスも含めて殺す
+                p.Kill(entireProcessTree: true);
         }
-        catch
-        {
-            // Kill に失敗しても例外は握りつぶす
-        }
+        catch { }
     }
 
     // ---------------------------------------------------------
@@ -80,11 +76,17 @@ public class PythonServer
     // ---------------------------------------------------------
     public async Task<PythonServerResult> RunOnceAsync(string json, int timeoutSeconds, CancellationToken token)
     {
-        return await Task.Run(() =>
+        using (token.Register(RequestCancel))
         {
-            token.ThrowIfCancellationRequested();
-            return RunOnce(json, timeoutSeconds);
-        }, token);
+            try
+            {
+                return await Task.Run(() => RunOnce(json, timeoutSeconds), token);
+            }
+            catch (OperationCanceledException)
+            {
+                return PythonServerResult.Error("キャンセルされました");
+            }
+        }
     }
 
     // ---------------------------------------------------------
@@ -138,12 +140,12 @@ public class PythonServer
             sw.WriteLine(json);
         }
 
-        // タイムアウト待ち（UI 依存なし）
+        // タイムアウト待ち
         bool exited = _process.WaitForExit(timeoutSeconds * 1000);
 
         if (!exited)
         {
-            try { _process.Kill(); } catch { }
+            SafeKill(_process);
             return PythonServerResult.Error("Python process timeout");
         }
 

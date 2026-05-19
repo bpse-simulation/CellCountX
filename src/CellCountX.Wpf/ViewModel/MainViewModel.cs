@@ -29,14 +29,32 @@ public class MainViewModel : INotifyPropertyChanged
     public bool UseGpu
     {
         get => _useGpu;
-        set { _useGpu = value; OnPropertyChanged(nameof(UseGpu)); }
+        set
+        {
+            if (_useGpu == value) return;
+
+            var oldUseGpu = _useGpu;
+            _useGpu = value;
+            OnPropertyChanged(nameof(UseGpu));
+
+            // 以前が自動タイムアウト値だった場合のみ、新しい自動値に追従させる
+            if (TimeoutSeconds == GetAutoTimeout(oldUseGpu) || TimeoutSeconds <= 0)
+            {
+                TimeoutSeconds = GetAutoTimeout(_useGpu);
+            }
+        }
     }
 
-    private int _timeoutSeconds = 600;
+    private int _timeoutSeconds = 60;
     public int TimeoutSeconds
     {
         get => _timeoutSeconds;
-        set { _timeoutSeconds = value; OnPropertyChanged(nameof(TimeoutSeconds)); }
+        set
+        {
+            if (_timeoutSeconds == value) return;
+            _timeoutSeconds = value;
+            OnPropertyChanged(nameof(TimeoutSeconds));
+        }
     }
 
     private double _progressValue;
@@ -67,6 +85,84 @@ public class MainViewModel : INotifyPropertyChanged
     }
 
     // ---------------------------------------------------------
+    // 死細胞除去パラメータ（UI から調整可能）
+    // ---------------------------------------------------------
+    private bool _removeDeadCells;
+    public bool RemoveDeadCells
+    {
+        get => _removeDeadCells;
+        set
+        {
+            if (_removeDeadCells == value) return;
+            _removeDeadCells = value;
+            OnPropertyChanged(nameof(RemoveDeadCells));
+
+            Properties.Settings.Default.RemoveDeadCells = value;
+            Properties.Settings.Default.Save();
+        }
+    }
+
+    private int _minArea = 50;
+    public int MinArea
+    {
+        get => _minArea;
+        set
+        {
+            if (_minArea == value) return;
+            _minArea = value;
+            OnPropertyChanged(nameof(MinArea));
+
+            Properties.Settings.Default.MinArea = value;
+            Properties.Settings.Default.Save();
+        }
+    }
+
+    private double _maxCircularity = 0.85;
+    public double MaxCircularity
+    {
+        get => _maxCircularity;
+        set
+        {
+            if (_maxCircularity == value) return;
+            _maxCircularity = value;
+            OnPropertyChanged(nameof(MaxCircularity));
+
+            Properties.Settings.Default.MaxCircularity = value;
+            Properties.Settings.Default.Save();
+        }
+    }
+
+    private double _maxIntensity = 0.6;
+    public double MaxIntensity
+    {
+        get => _maxIntensity;
+        set
+        {
+            if (_maxIntensity == value) return;
+            _maxIntensity = value;
+            OnPropertyChanged(nameof(MaxIntensity));
+
+            Properties.Settings.Default.MaxIntensity = value;
+            Properties.Settings.Default.Save();
+        }
+    }
+
+    private double _minVariance = 50;
+    public double MinVariance
+    {
+        get => _minVariance;
+        set
+        {
+            if (_minVariance == value) return;
+            _minVariance = value;
+            OnPropertyChanged(nameof(MinVariance));
+
+            Properties.Settings.Default.MinVariance = value;
+            Properties.Settings.Default.Save();
+        }
+    }
+
+    // ---------------------------------------------------------
     // コマンド
     // ---------------------------------------------------------
     public ICommand BrowseFolderCommand { get; }
@@ -84,6 +180,22 @@ public class MainViewModel : INotifyPropertyChanged
 
     public MainViewModel()
     {
+        // 設定読み込み
+        UseGpu = Properties.Settings.Default.UseGpu;
+
+        // 詳細設定で TimeoutSeconds が設定されていればそれを使う。0 以下なら自動値。
+        var savedTimeout = Properties.Settings.Default.TimeoutSeconds;
+        TimeoutSeconds = savedTimeout > 0 ? savedTimeout : GetAutoTimeout(UseGpu);
+
+        // 死細胞除去の ON/OFF を復元
+        RemoveDeadCells = Properties.Settings.Default.RemoveDeadCells;
+
+        // パラメータも復元
+        MinArea = Properties.Settings.Default.MinArea;
+        MaxCircularity = Properties.Settings.Default.MaxCircularity;
+        MaxIntensity = Properties.Settings.Default.MaxIntensity;
+        MinVariance = Properties.Settings.Default.MinVariance;
+
         // PythonServer → PythonClient → BatchProcessor の構成
         var pythonServer = new PythonServer();
         var pythonClient = new PythonClient(pythonServer);
@@ -107,6 +219,9 @@ public class MainViewModel : INotifyPropertyChanged
 
     private void OnPropertyChanged(string name)
         => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+
+    internal int GetAutoTimeout(bool useGpu)
+        => useGpu ? 300 : 900; // GPU: 5分, CPU: 15分
 
     // ---------------------------------------------------------
     // フォルダ選択
@@ -145,12 +260,19 @@ public class MainViewModel : INotifyPropertyChanged
         IsRunning = true;
         _cts = new CancellationTokenSource();
 
+        // 死細胞除去パラメータを含めて Python に渡す
         var req = new BatchRequest
         {
             InputFolder = InputFolder,
             OutputFolder = OutputFolder,
             UseGpu = UseGpu,
-            TimeoutSeconds = TimeoutSeconds
+            TimeoutSeconds = TimeoutSeconds,
+
+            RemoveDeadCells = RemoveDeadCells,
+            MinArea = MinArea,
+            MaxCircularity = MaxCircularity,
+            MaxIntensity = MaxIntensity,
+            MinVariance = MinVariance
         };
 
         await _processor.StartAsync(req, _cts.Token);
