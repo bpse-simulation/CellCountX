@@ -84,6 +84,10 @@ public class MainViewModel : INotifyPropertyChanged
 
     public MainViewModel()
     {
+        // 設定読み込み
+        UseGpu = Properties.Settings.Default.UseGpu;
+        TimeoutSeconds = Properties.Settings.Default.TimeoutSeconds;
+        
         // PythonServer → PythonClient → BatchProcessor の構成
         var pythonServer = new PythonServer();
         var pythonClient = new PythonClient(pythonServer);

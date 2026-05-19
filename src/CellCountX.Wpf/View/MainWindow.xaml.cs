@@ -35,15 +35,20 @@ public partial class MainWindow : Window
     }
 
     // ---------------------------------------------------------
-    // Window Closing - 実行中ならキャンセルしてから閉じる
+    // Window Closing - 設定保存 & 実行中ならキャンセル
     // ---------------------------------------------------------
     protected override void OnClosing(CancelEventArgs e)
     {
         if (DataContext is MainViewModel vm)
         {
+            // 設定保存
+            Properties.Settings.Default.UseGpu = vm.UseGpu;
+            Properties.Settings.Default.TimeoutSeconds = vm.TimeoutSeconds;
+            Properties.Settings.Default.Save();
+
+            // 実行中ならキャンセルして Python プロセスを Kill
             if (vm.IsRunning)
             {
-                // 実行中ならキャンセルして Python プロセスを Kill
                 vm.CancelBatchCommand.Execute(null);
             }
         }
