@@ -5,8 +5,10 @@ import warnings
 import contextlib
 import tifffile
 import torch
+import numpy as np
 from cellpose import models
 from cellpose.io import imread
+from scipy.ndimage import binary_erosion
 
 # server.py のあるディレクトリを import パスに追加
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -57,6 +59,34 @@ def read_input():
     return json.loads(line)
 
 # ---------------------------------------------------------
+# マスク輪郭を赤色で重ねた画像を生成
+# ---------------------------------------------------------
+def create_overlay(image, masks):
+    # image を RGB に変換
+    if image.ndim == 2:
+        rgb = np.stack([image, image, image], axis=-1)
+    else:
+        rgb = image.copy()
+
+    rgb = rgb.astype(np.float32)
+    rgb = rgb / (rgb.max() + 1e-6)  # 正規化
+    rgb = (rgb * 255).clip(0, 255).astype(np.uint8)
+
+    # 輪郭抽出
+    boundaries = np.zeros_like(masks, dtype=bool)
+    for label in range(1, masks.max() + 1):
+        cell = (masks == label)
+        eroded = binary_erosion(cell)
+        boundary = cell ^ eroded
+        boundaries |= boundary
+
+    # 赤色で描画
+    overlay = rgb.copy()
+    overlay[boundaries] = [255, 0, 0]
+
+    return overlay
+
+# ---------------------------------------------------------
 # メイン処理
 # ---------------------------------------------------------
 def main():
@@ -77,8 +107,9 @@ def main():
 
         # ★ image が RGB の場合は 2D に変換
         if image.ndim == 3:
-            # 平均化（または任意のチャネルを使用）
-            image = image.mean(axis=2)
+            image_gray = image.mean(axis=2)
+        else:
+            image_gray = image
 
         # GPU 判定
         request_gpu = data.get("gpu", False)
@@ -88,7 +119,7 @@ def main():
         model = load_model(use_gpu)
 
         # Cellpose 推論
-        masks, flows, styles = run_inference(model, image)
+        masks, flows, styles = run_inference(model, image_gray)
 
         # Cellpose の元の細胞数
         original_count = int(masks.max())
@@ -110,7 +141,7 @@ def main():
                 "min_variance": data.get("min_variance", 50)
             }
 
-            masks = remove_dead_cells(masks, image, **params)
+            masks = remove_dead_cells(masks, image_gray, **params)
 
         # 死細胞除去後の細胞数
         filtered_count = int(masks.max())
@@ -121,17 +152,26 @@ def main():
         output_folder = data.get("output", folder)
         os.makedirs(output_folder, exist_ok=True)
 
+        # マスク保存
         mask_path = os.path.join(output_folder, f"{base}_cp_masks.tif")
         tifffile.imwrite(mask_path, masks.astype("uint16"))
+
+        # ---------------------------------------------------------
+        # ★ 輪郭オーバーレイ画像を生成して保存
+        # ---------------------------------------------------------
+        overlay = create_overlay(image_gray, masks)
+        overlay_path = os.path.join(output_folder, f"{base}_overlay.png")
+        tifffile.imwrite(overlay_path, overlay)
 
         # ---------------------------------------------------------
         # 結果返却
         # ---------------------------------------------------------
         result = {
-            "count": original_count,          # ★ Cellpose の元の細胞数
-            "filtered_count": filtered_count, # ★ 死細胞除去後の細胞数
+            "count": original_count,
+            "filtered_count": filtered_count,
             "gpu_used": use_gpu,
             "mask_path": mask_path,
+            "overlay_path": overlay_path,
             "dead_removed": remove_dead
         }
 
