@@ -74,6 +74,7 @@ public class BatchProcessor(PythonClient python)
 
             try
             {
+                // ★ タイムアウトは PythonClient が一元管理
                 var py = await _python.RunAsync(json, req.TimeoutSeconds, token);
 
                 if (py.IsError)
@@ -104,6 +105,7 @@ public class BatchProcessor(PythonClient python)
             }
             catch (Exception ex)
             {
+                // ★ PythonClient 内部例外（Kill 失敗など）もここで拾う
                 Log?.Invoke($"例外: {ex.Message}");
             }
 

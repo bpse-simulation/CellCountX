@@ -29,14 +29,32 @@ public class MainViewModel : INotifyPropertyChanged
     public bool UseGpu
     {
         get => _useGpu;
-        set { _useGpu = value; OnPropertyChanged(nameof(UseGpu)); }
+        set
+        {
+            if (_useGpu == value) return;
+
+            var oldUseGpu = _useGpu;
+            _useGpu = value;
+            OnPropertyChanged(nameof(UseGpu));
+
+            // 以前が自動タイムアウト値だった場合のみ、新しい自動値に追従させる
+            if (TimeoutSeconds == GetAutoTimeout(oldUseGpu) || TimeoutSeconds <= 0)
+            {
+                TimeoutSeconds = GetAutoTimeout(_useGpu);
+            }
+        }
     }
 
     private int _timeoutSeconds = 60;
     public int TimeoutSeconds
     {
         get => _timeoutSeconds;
-        set { _timeoutSeconds = value; OnPropertyChanged(nameof(TimeoutSeconds)); }
+        set
+        {
+            if (_timeoutSeconds == value) return;
+            _timeoutSeconds = value;
+            OnPropertyChanged(nameof(TimeoutSeconds));
+        }
     }
 
     private double _progressValue;
@@ -143,6 +161,7 @@ public class MainViewModel : INotifyPropertyChanged
             Properties.Settings.Default.Save();
         }
     }
+
     // ---------------------------------------------------------
     // コマンド
     // ---------------------------------------------------------
@@ -163,7 +182,10 @@ public class MainViewModel : INotifyPropertyChanged
     {
         // 設定読み込み
         UseGpu = Properties.Settings.Default.UseGpu;
-        TimeoutSeconds = Properties.Settings.Default.TimeoutSeconds;
+
+        // 詳細設定で TimeoutSeconds が設定されていればそれを使う。0 以下なら自動値。
+        var savedTimeout = Properties.Settings.Default.TimeoutSeconds;
+        TimeoutSeconds = savedTimeout > 0 ? savedTimeout : GetAutoTimeout(UseGpu);
 
         // 死細胞除去の ON/OFF を復元
         RemoveDeadCells = Properties.Settings.Default.RemoveDeadCells;
@@ -197,6 +219,9 @@ public class MainViewModel : INotifyPropertyChanged
 
     private void OnPropertyChanged(string name)
         => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+
+    internal int GetAutoTimeout(bool useGpu)
+        => useGpu ? 300 : 900; // GPU: 5分, CPU: 15分
 
     // ---------------------------------------------------------
     // フォルダ選択

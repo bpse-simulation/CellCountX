@@ -100,6 +100,27 @@ public partial class MainWindow : Window
     }
 
     // -----------------------------
+    // 詳細設定ウィンドウを開く
+    // -----------------------------
+    private void OpenAdvancedSettings(object sender, RoutedEventArgs e)
+    {
+        var dlg = new AdvancedSettingsWindow
+        {
+            Owner = this
+        };
+
+        if (dlg.ShowDialog() == true)
+        {
+            // 設定が保存されたので ViewModel に反映
+            if (DataContext is MainViewModel vm)
+            {
+                var saved = Properties.Settings.Default.TimeoutSeconds;
+                vm.TimeoutSeconds = saved > 0 ? saved : vm.GetAutoTimeout(vm.UseGpu);
+            }
+        }
+    }
+
+    // -----------------------------
     // バージョン情報ウィンドウを開く
     // -----------------------------
     private void OpenAboutWindow(object sender, RoutedEventArgs e)
