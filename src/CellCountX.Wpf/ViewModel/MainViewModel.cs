@@ -102,7 +102,7 @@ public class MainViewModel : INotifyPropertyChanged
         }
     }
 
-    private int _minArea = 50;
+    private int _minArea = 0;
     public int MinArea
     {
         get => _minArea;
@@ -117,7 +117,7 @@ public class MainViewModel : INotifyPropertyChanged
         }
     }
 
-    private double _maxCircularity = 0.85;
+    private double _maxCircularity = 1;
     public double MaxCircularity
     {
         get => _maxCircularity;
@@ -132,7 +132,7 @@ public class MainViewModel : INotifyPropertyChanged
         }
     }
 
-    private double _maxIntensity = 0.6;
+    private double _maxIntensity = 255;
     public double MaxIntensity
     {
         get => _maxIntensity;
@@ -147,7 +147,7 @@ public class MainViewModel : INotifyPropertyChanged
         }
     }
 
-    private double _minVariance = 50;
+    private double _minVariance = 0;
     public double MinVariance
     {
         get => _minVariance;
