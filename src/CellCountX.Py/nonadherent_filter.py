@@ -1,14 +1,14 @@
 import numpy as np
 from skimage.measure import regionprops
 
-def remove_dead_cells(masks, image,
-                      min_area=50,
-                      max_circularity=0.85,
-                      max_intensity=0.6,
-                      min_variance=50):
+def remove_nonadherent_cells(masks, image,
+                        min_area=0,
+                        max_circularity=1,
+                        max_intensity=1,
+                        min_variance=0):
     """
     Cellpose の masks と元画像 image を入力し、
-    死細胞様オブジェクトを除去した新しい masks を返す。
+    非接着細胞様オブジェクトを除去した新しい masks を返す。
     """
 
     new_mask = np.zeros_like(masks)
@@ -27,16 +27,16 @@ def remove_dead_cells(masks, image,
             circularity = float(4 * np.pi * area / (region.perimeter ** 2))
 
         # -------------------------
-        # 除外条件（死細胞の特徴）
+        # 除外条件（非接着細胞の特徴）
         # -------------------------
-        is_dead = (
+        is_nonadherents = (
             area < min_area or
             circularity > max_circularity or
             mean_intensity > max_intensity or
             variance < min_variance
         )
 
-        if not is_dead:
+        if not is_nonadherents:
             new_mask[masks == region.label] = label
             label += 1
 

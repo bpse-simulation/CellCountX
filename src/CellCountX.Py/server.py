@@ -13,8 +13,8 @@ from scipy.ndimage import binary_erosion
 # server.py のあるディレクトリを import パスに追加
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-# 死細胞除去フィルタ
-from deadcell_filter import remove_dead_cells
+# 非接着細胞除去フィルタ
+from nonadherent_filter import remove_nonadherent_cells
 
 # ---------------------------------------------------------
 # tqdm の stderr を無効化する
@@ -121,31 +121,6 @@ def main():
         # Cellpose 推論
         masks, flows, styles = run_inference(model, image_gray)
 
-        # Cellpose の元の細胞数
-        original_count = int(masks.max())
-
-        # masks が (H, W, 1) の場合は 2D に変換
-        if masks.ndim == 3 and masks.shape[-1] == 1:
-            masks = masks[:, :, 0]
-
-        # ---------------------------------------------------------
-        # 死細胞除去（後処理）
-        # ---------------------------------------------------------
-        remove_dead = data.get("remove_dead", False)
-
-        if remove_dead:
-            params = {
-                "min_area": data.get("min_area", 50),
-                "max_circularity": data.get("max_circularity", 0.85),
-                "max_intensity": data.get("max_intensity", 0.6),
-                "min_variance": data.get("min_variance", 50)
-            }
-
-            masks = remove_dead_cells(masks, image_gray, **params)
-
-        # 死細胞除去後の細胞数
-        filtered_count = int(masks.max())
-
         # 出力パス生成
         folder = os.path.dirname(img_path)
         base = os.path.splitext(os.path.basename(img_path))[0]
@@ -156,8 +131,33 @@ def main():
         mask_path = os.path.join(output_folder, f"{base}_cp_masks.tif")
         tifffile.imwrite(mask_path, masks.astype("uint16"))
 
+        # Cellpose の元の細胞数
+        original_count = int(masks.max())
+
+        # masks が (H, W, 1) の場合は 2D に変換
+        if masks.ndim == 3 and masks.shape[-1] == 1:
+            masks = masks[:, :, 0]
+
         # ---------------------------------------------------------
-        # ★ 輪郭オーバーレイ画像を生成して保存
+        # 非接着細胞除去（後処理）
+        # ---------------------------------------------------------
+        remove_nonadherents = data.get("remove_nonadherents", False)
+
+        if remove_nonadherents:
+            params = {
+                "min_area": data.get("min_area", 0),
+                "max_circularity": data.get("max_circularity", 1),
+                "max_intensity": data.get("max_intensity", 1),
+                "min_variance": data.get("min_variance", 0)
+            }
+
+            masks = remove_nonadherent_cells(masks, image_gray, **params)
+
+        # 非接着細胞除去後の細胞数
+        filtered_count = int(masks.max())
+
+        # ---------------------------------------------------------
+        # 輪郭オーバーレイ画像を生成して保存
         # ---------------------------------------------------------
         overlay = create_overlay(image_gray, masks)
         overlay_path = os.path.join(output_folder, f"{base}_overlay.png")
@@ -172,7 +172,7 @@ def main():
             "gpu_used": use_gpu,
             "mask_path": mask_path,
             "overlay_path": overlay_path,
-            "dead_removed": remove_dead
+            "nonadherents_removed": remove_nonadherents
         }
 
         print(json.dumps(result), flush=True)

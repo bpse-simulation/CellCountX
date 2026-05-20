@@ -34,7 +34,7 @@ public class JsonParser
             // Cellpose の元の細胞数
             int count = root.GetProperty("count").GetInt32();
 
-            // 死細胞除去後の細胞数（なければ count と同じ）
+            // 非接着細胞除去後の細胞数（なければ count と同じ）
             int filteredCount = root.TryGetProperty("filtered_count", out var fc)
                 ? fc.GetInt32()
                 : count;
@@ -42,8 +42,8 @@ public class JsonParser
             // GPU 使用
             bool gpu = root.TryGetProperty("gpu_used", out var g) && g.GetBoolean();
 
-            // 死細胞除去が実行されたか
-            bool deadRemoved = root.TryGetProperty("dead_removed", out var dr) && dr.GetBoolean();
+            // 非接着細胞除去が実行されたか
+            bool nonadherentsRemoved = root.TryGetProperty("nonadherents_removed", out var dr) && dr.GetBoolean();
 
             // マスクパス
             string maskPath = root.TryGetProperty("mask_path", out var mp)
@@ -56,7 +56,7 @@ public class JsonParser
                 Count = count,
                 FilteredCount = filteredCount,
                 GpuUsed = gpu,
-                DeadRemoved = deadRemoved,
+                NonadherentsRemoved = nonadherentsRemoved,
                 MaskPath = maskPath
             };
         }

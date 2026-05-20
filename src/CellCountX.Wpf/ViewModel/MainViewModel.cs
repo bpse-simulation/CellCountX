@@ -85,19 +85,19 @@ public class MainViewModel : INotifyPropertyChanged
     }
 
     // ---------------------------------------------------------
-    // 死細胞除去パラメータ（UI から調整可能）
+    // 非接着細胞除去パラメータ（UI から調整可能）
     // ---------------------------------------------------------
-    private bool _removeDeadCells;
-    public bool RemoveDeadCells
+    private bool _removenonadherents;
+    public bool RemoveNonAdherents
     {
-        get => _removeDeadCells;
+        get => _removenonadherents;
         set
         {
-            if (_removeDeadCells == value) return;
-            _removeDeadCells = value;
-            OnPropertyChanged(nameof(RemoveDeadCells));
+            if (_removenonadherents == value) return;
+            _removenonadherents = value;
+            OnPropertyChanged(nameof(RemoveNonAdherents));
 
-            Properties.Settings.Default.RemoveDeadCells = value;
+            Properties.Settings.Default.RemoveNonAdherents = value;
             Properties.Settings.Default.Save();
         }
     }
@@ -187,8 +187,8 @@ public class MainViewModel : INotifyPropertyChanged
         var savedTimeout = Properties.Settings.Default.TimeoutSeconds;
         TimeoutSeconds = savedTimeout > 0 ? savedTimeout : GetAutoTimeout(UseGpu);
 
-        // 死細胞除去の ON/OFF を復元
-        RemoveDeadCells = Properties.Settings.Default.RemoveDeadCells;
+        // 非接着細胞除去の ON/OFF を復元
+        RemoveNonAdherents = Properties.Settings.Default.RemoveNonAdherents;
 
         // パラメータも復元
         MinArea = Properties.Settings.Default.MinArea;
@@ -260,7 +260,7 @@ public class MainViewModel : INotifyPropertyChanged
         IsRunning = true;
         _cts = new CancellationTokenSource();
 
-        // 死細胞除去パラメータを含めて Python に渡す
+        // 非接着細胞除去パラメータを含めて Python に渡す
         var req = new BatchRequest
         {
             InputFolder = InputFolder,
@@ -268,7 +268,7 @@ public class MainViewModel : INotifyPropertyChanged
             UseGpu = UseGpu,
             TimeoutSeconds = TimeoutSeconds,
 
-            RemoveDeadCells = RemoveDeadCells,
+            RemoveNonAdherents = RemoveNonAdherents,
             MinArea = MinArea,
             MaxCircularity = MaxCircularity,
             MaxIntensity = MaxIntensity,
