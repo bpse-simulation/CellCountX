@@ -4,7 +4,7 @@ from skimage.measure import regionprops
 def remove_nonadherent_cells(masks, image,
                         min_area=0,
                         max_circularity=1,
-                        max_intensity=1,
+                        max_intensity=255,
                         min_variance=0):
     """
     Cellpose の masks と元画像 image を入力し、

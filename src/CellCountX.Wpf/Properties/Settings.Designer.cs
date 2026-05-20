@@ -37,7 +37,7 @@ namespace CellCountX.Wpf.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("30")]
+        [global::System.Configuration.DefaultSettingValueAttribute("600")]
         public int TimeoutSeconds {
             get {
                 return ((int)(this["TimeoutSeconds"]));

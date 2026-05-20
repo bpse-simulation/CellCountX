@@ -147,7 +147,7 @@ def main():
             params = {
                 "min_area": data.get("min_area", 0),
                 "max_circularity": data.get("max_circularity", 1),
-                "max_intensity": data.get("max_intensity", 1),
+                "max_intensity": data.get("max_intensity", 255),
                 "min_variance": data.get("min_variance", 0)
             }
 
