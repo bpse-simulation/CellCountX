@@ -37,13 +37,13 @@ jobs:
       # ---------------------------------------------
       - name: Download python-runtime part1
         run: |
-          curl -L -o python.zip.001 `
-            https://github.com/bpse-simulation/CellCountX/releases/download/python-runtime/python.zip.001
+          curl -L -o site-packages.zip.001 `
+            https://github.com/bpse-simulation/CellCountX/releases/download/python-runtime/site-packages.zip.001
 
       - name: Download python-runtime part2
         run: |
-          curl -L -o python.zip.002 `
-            https://github.com/bpse-simulation/CellCountX/releases/download/python-runtime/python.zip.002
+          curl -L -o site-packages.zip.002 `
+            https://github.com/bpse-simulation/CellCountX/releases/download/python-runtime/site-packages.zip.002
 
       # ---------------------------------------------
       # 分割 zip を結合（cmd.exe）
@@ -51,13 +51,13 @@ jobs:
       - name: Combine python-runtime zip
         shell: cmd
         run: |
-          copy /b python.zip.001 + python.zip.002 python.zip
+          copy /b site-packages.zip.001 + site-packages.zip.002 site-packages.zip
 
       # ---------------------------------------------
-      # python.zip を展開（7z）
+      # site-packages.zip を展開（7z）
       # ---------------------------------------------
       - name: Extract python-runtime
-        run: 7z x python.zip -opython
+        run: 7z x site-packages.zip -opython
 
       # ---------------------------------------------
       # csproj の InformationalVersion を書き換え
@@ -90,7 +90,7 @@ jobs:
       # ---------------------------------------------
       - name: Copy python runtime into publish folder
         run: |
-          Copy-Item -Path python -Destination publish/python -Recurse
+          Copy-Item -Path python\* -Destination publish/python -Recurse
 
       # ---------------------------------------------
       # Release ノート自動生成
