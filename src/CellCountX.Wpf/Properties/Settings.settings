@@ -20,7 +20,7 @@
     <Setting Name="MinVariance" Type="System.Double" Scope="User">
       <Value Profile="(Default)">0</Value>
     </Setting>
-    <Setting Name="RemoveDeadCells" Type="System.Boolean" Scope="User">
+    <Setting Name="RemoveNonAdherents" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">False</Value>
     </Setting>
   </Settings>

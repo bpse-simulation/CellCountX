@@ -65,8 +65,8 @@
     <Copy SourceFiles="..\CellCountX.Py\server.py"
           DestinationFolder="$(OutDir)" />
 
-    <!-- deadcell_filter.py -->
-    <Copy SourceFiles="..\CellCountX.Py\deadcell_filter.py"
+    <!-- nonadherent_filter.py -->
+    <Copy SourceFiles="..\CellCountX.Py\nonadherent_filter.py"
           DestinationFolder="$(OutDir)" />
   </Target>
 
@@ -100,13 +100,13 @@
     <Copy SourceFiles="..\CellCountX.Py\server.py"
           DestinationFolder="$(PublishDir)" />
 
-    <!-- deadcell_filter.py -->
-    <Copy SourceFiles="..\CellCountX.Py\deadcell_filter.py"
+    <!-- nonadherent_filter.py -->
+    <Copy SourceFiles="..\CellCountX.Py\nonadherent_filter.py"
           DestinationFolder="$(PublishDir)" />
   </Target>
 
   <!-- ============================
-       Clean 時に python/ と server.py と deadcell_filter.py を削除
+       Clean 時に python/ と server.py と nonadherent_filter.py を削除
        ============================ -->
   <Target Name="CleanCopiedPython"
           BeforeTargets="Clean"
@@ -115,12 +115,12 @@
     <!-- Build 出力 -->
     <RemoveDir Directories="$(OutDir)python" />
     <Delete Files="$(OutDir)server.py" />
-    <Delete Files="$(OutDir)deadcell_filter.py" />
+    <Delete Files="$(OutDir)nonadherent_filter.py" />
 
     <!-- Publish 出力 -->
     <RemoveDir Directories="$(PublishDir)python" />
     <Delete Files="$(PublishDir)server.py" />
-    <Delete Files="$(PublishDir)deadcell_filter.py" />
+    <Delete Files="$(PublishDir)nonadherent_filter.py" />
   </Target>
 
   <!-- ============================

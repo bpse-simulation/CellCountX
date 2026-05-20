@@ -7,6 +7,6 @@ public class JsonParseResult
     public int Count { get; set; }
     public bool GpuUsed { get; set; }
     public int FilteredCount { get; set; }
-    public bool DeadRemoved { get; set; }
+    public bool NonadherentsRemoved { get; set; }
     public string MaskPath { get; set; } = "";
 }

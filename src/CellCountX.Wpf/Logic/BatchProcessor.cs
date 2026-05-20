@@ -62,8 +62,8 @@ public class BatchProcessor(PythonClient python)
                 gpu = req.UseGpu,
                 output = req.OutputFolder,
 
-                // 死細胞除去パラメータ
-                remove_dead = req.RemoveDeadCells,
+                // 非接着細胞除去パラメータ
+                remove_nonadherents = req.RemoveNonAdherents,
                 min_area = req.MinArea,
                 max_circularity = req.MaxCircularity,
                 max_intensity = req.MaxIntensity,
@@ -93,7 +93,7 @@ public class BatchProcessor(PythonClient python)
                     continue;
                 }
 
-                // ★ CellResult に死細胞除去後の細胞数を追加
+                // ★ CellResult に非接着細胞除去後の細胞数を追加
                 results.Add(new CellResult
                 {
                     FileName = Path.GetFileName(file),

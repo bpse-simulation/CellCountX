@@ -98,12 +98,12 @@ namespace CellCountX.Wpf.Properties {
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("False")]
-        public bool RemoveDeadCells {
+        public bool RemoveNonAdherents {
             get {
-                return ((bool)(this["RemoveDeadCells"]));
+                return ((bool)(this["RemoveNonAdherents"]));
             }
             set {
-                this["RemoveDeadCells"] = value;
+                this["RemoveNonAdherents"] = value;
             }
         }
     }
