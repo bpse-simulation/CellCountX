@@ -13,8 +13,8 @@ public class BatchRequest
     // 非接着細胞除去パラメータ（UI → Python へ渡す）
     public bool RemoveNonAdherents { get; set; }
 
-    public int MinArea { get; set; } = 50;
-    public double MaxCircularity { get; set; } = 0.85;
-    public double MaxIntensity { get; set; } = 0.6;
-    public double MinVariance { get; set; } = 50;
+    public int MinArea { get; set; } = 0;
+    public double MaxCircularity { get; set; } = 1.0;
+    public double MaxIntensity { get; set; } = 255.0;
+    public double MinVariance { get; set; } = 0;
 }

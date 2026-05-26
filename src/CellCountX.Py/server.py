@@ -45,9 +45,13 @@ def load_model(use_gpu: bool):
 # ---------------------------------------------------------
 # 推論実行（eval 時の tqdm も抑制）
 # ---------------------------------------------------------
-def run_inference(model, image):
+def run_inference(model, image, flow_threshold, cellprob_threshold):
     with suppress_stderr():
-        return model.eval(image, channels=[0, 0])
+        return model.eval(
+            image,
+            flow_threshold=flow_threshold,
+            cellprob_threshold=cellprob_threshold
+        )
 
 # ---------------------------------------------------------
 # JSON 入力を読み取る
@@ -107,7 +111,13 @@ def main():
 
         # ★ image が RGB の場合は 2D に変換
         if image.ndim == 3:
-            image_gray = image.mean(axis=2)
+            if image.shape[2] == 4:
+                # ARGB → RGB 部分だけ使う
+                rgb = image[:, :, 1:4]
+                image_gray = rgb.mean(axis=2)
+            else:
+                # 通常の RGB
+                image_gray = image.mean(axis=2)
         else:
             image_gray = image
 
@@ -118,8 +128,17 @@ def main():
         # モデルロード
         model = load_model(use_gpu)
 
+        # Cellpose additional settings
+        flow_threshold = float(data.get("flow_threshold", 0.4))
+        cellprob_threshold = float(data.get("cellprob_threshold", 0.0))
+
         # Cellpose 推論
-        masks, flows, styles = run_inference(model, image_gray)
+        masks, flows, styles = run_inference(
+            model,
+            image,
+            flow_threshold,
+            cellprob_threshold
+        )
 
         # 出力パス生成
         folder = os.path.dirname(img_path)
