@@ -10,11 +10,6 @@ public class BatchRequest
     // 詳細設定で上書きされる可能性がある
     public int TimeoutSeconds { get; set; }
 
-    // 非接着細胞除去パラメータ（UI → Python へ渡す）
-    public bool RemoveNonAdherents { get; set; }
-
-    public int MinArea { get; set; } = 0;
-    public double MaxCircularity { get; set; } = 1.0;
-    public double MaxIntensity { get; set; } = 255.0;
-    public double MinVariance { get; set; } = 0;
+    // RF フィルタ使用の有無（UI → Python へ渡す）
+    public bool UseRfFilter { get; set; }
 }

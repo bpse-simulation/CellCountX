@@ -62,12 +62,8 @@ public class BatchProcessor(PythonClient python)
                 gpu = req.UseGpu,
                 output = req.OutputFolder,
 
-                // 非接着細胞除去パラメータ
-                remove_nonadherents = req.RemoveNonAdherents,
-                min_area = req.MinArea,
-                max_circularity = req.MaxCircularity,
-                max_intensity = req.MaxIntensity,
-                min_variance = req.MinVariance
+                // RF フィルタの使用有無
+                use_rf_filter = req.UseRfFilter,
             };
 
             string json = JsonSerializer.Serialize(payload);
@@ -115,7 +111,13 @@ public class BatchProcessor(PythonClient python)
         Progress?.Invoke(100);
 
         // ★ CSV に FilteredCellCount を含めて保存
-        _csvExporter.Save(results, req.OutputFolder);
+        string savedPath = _csvExporter.Save(results, req.OutputFolder);
+        // cells.csv 以外なら別名保存されたということ
+
+        if (!savedPath.EndsWith("cells.csv"))
+        {
+            Log?.Invoke($"CSV は Excel によってロックされていたため、別名で保存しました: {savedPath}");
+        }
 
         Log?.Invoke("バッチ処理完了");
 
