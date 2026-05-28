@@ -26,6 +26,9 @@
     <Compile Include="overlay.py" />
     <Compile Include="rf_filter.py" />
     <Compile Include="server.py" />
+    <Compile Include="train\extract_features_folder.py" />
+    <Compile Include="train\rf_filter_batch.py" />
+    <Compile Include="train\train_rf_keep_adherent.py" />
   </ItemGroup>
   <ItemGroup>
     <Interpreter Include="cellpose\">
@@ -39,7 +42,11 @@
     </Interpreter>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="train\all_objects_features.csv" />
     <Content Include="rf_keep_adherent.pkl" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="train\" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in
