@@ -6,11 +6,11 @@ namespace CellCountX.Wpf.Logic;
 
 public class CsvExporter
 {
-    public void Save(List<CellResult> results, string outputFolder)
+    public string Save(List<CellResult> results, string outputFolder)
     {
         Directory.CreateDirectory(outputFolder);
 
-        string csvPath = Path.Combine(outputFolder, "cells.csv");
+        string mainCsv = Path.Combine(outputFolder, "cells.csv");
 
         var lines = new List<string>
         {
@@ -25,7 +25,24 @@ public class CsvExporter
             lines.Add($"{file},{count},{filteredCount}");
         }
 
-        File.WriteAllLines(csvPath, lines, Encoding.UTF8);
+        try
+        {
+            // 通常保存
+            File.WriteAllLines(mainCsv, lines, Encoding.UTF8);
+            return mainCsv; // 正常保存
+        }
+        catch (IOException)
+        {
+            // Excel が開いている → 別名保存
+            string fallback = Path.Combine(
+                outputFolder,
+                $"cells_{DateTime.Now:yyyyMMdd_HHmmss}.csv"
+            );
+
+            File.WriteAllLines(fallback, lines, Encoding.UTF8);
+
+            return fallback; // 別名保存パスを返す
+        }
     }
 
     private static string Escape(string s)

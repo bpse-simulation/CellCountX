@@ -85,79 +85,18 @@ public class MainViewModel : INotifyPropertyChanged
     }
 
     // ---------------------------------------------------------
-    // 非接着細胞除去パラメータ（UI から調整可能）
+    // 接着細胞フィルタ（Random Forest）パラメータ（UI から調整可能）
     // ---------------------------------------------------------
-    private bool _removenonadherents;
-    public bool RemoveNonAdherents
+    private bool _useRfFilter;
+    public bool UseRfFilter
     {
-        get => _removenonadherents;
+        get => _useRfFilter;
         set
         {
-            if (_removenonadherents == value) return;
-            _removenonadherents = value;
-            OnPropertyChanged(nameof(RemoveNonAdherents));
+            _useRfFilter = value;
+            OnPropertyChanged(nameof(UseRfFilter));
 
-            Properties.Settings.Default.RemoveNonAdherents = value;
-            Properties.Settings.Default.Save();
-        }
-    }
-
-    private int _minArea = 0;
-    public int MinArea
-    {
-        get => _minArea;
-        set
-        {
-            if (_minArea == value) return;
-            _minArea = value;
-            OnPropertyChanged(nameof(MinArea));
-
-            Properties.Settings.Default.MinArea = value;
-            Properties.Settings.Default.Save();
-        }
-    }
-
-    private double _maxCircularity = 1;
-    public double MaxCircularity
-    {
-        get => _maxCircularity;
-        set
-        {
-            if (_maxCircularity == value) return;
-            _maxCircularity = value;
-            OnPropertyChanged(nameof(MaxCircularity));
-
-            Properties.Settings.Default.MaxCircularity = value;
-            Properties.Settings.Default.Save();
-        }
-    }
-
-    private double _maxIntensity = 255;
-    public double MaxIntensity
-    {
-        get => _maxIntensity;
-        set
-        {
-            if (_maxIntensity == value) return;
-            _maxIntensity = value;
-            OnPropertyChanged(nameof(MaxIntensity));
-
-            Properties.Settings.Default.MaxIntensity = value;
-            Properties.Settings.Default.Save();
-        }
-    }
-
-    private double _minVariance = 0;
-    public double MinVariance
-    {
-        get => _minVariance;
-        set
-        {
-            if (_minVariance == value) return;
-            _minVariance = value;
-            OnPropertyChanged(nameof(MinVariance));
-
-            Properties.Settings.Default.MinVariance = value;
+            Properties.Settings.Default.UseRfFilter = value;
             Properties.Settings.Default.Save();
         }
     }
@@ -187,14 +126,8 @@ public class MainViewModel : INotifyPropertyChanged
         var savedTimeout = Properties.Settings.Default.TimeoutSeconds;
         TimeoutSeconds = savedTimeout > 0 ? savedTimeout : GetAutoTimeout(UseGpu);
 
-        // 非接着細胞除去の ON/OFF を復元
-        RemoveNonAdherents = Properties.Settings.Default.RemoveNonAdherents;
-
-        // パラメータも復元
-        MinArea = Properties.Settings.Default.MinArea;
-        MaxCircularity = Properties.Settings.Default.MaxCircularity;
-        MaxIntensity = Properties.Settings.Default.MaxIntensity;
-        MinVariance = Properties.Settings.Default.MinVariance;
+        // RandomForest フィルターの ON/OFF を復元
+        UseRfFilter = Properties.Settings.Default.UseRfFilter;
 
         // PythonServer → PythonClient → BatchProcessor の構成
         var pythonServer = new PythonServer();
@@ -268,11 +201,7 @@ public class MainViewModel : INotifyPropertyChanged
             UseGpu = UseGpu,
             TimeoutSeconds = TimeoutSeconds,
 
-            RemoveNonAdherents = RemoveNonAdherents,
-            MinArea = MinArea,
-            MaxCircularity = MaxCircularity,
-            MaxIntensity = MaxIntensity,
-            MinVariance = MinVariance
+            UseRfFilter = UseRfFilter,
         };
 
         await _processor.StartAsync(req, _cts.Token);

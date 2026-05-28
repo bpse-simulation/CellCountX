@@ -45,8 +45,9 @@
 
       <!-- cellpose ライブラリ -->
       <PythonFiles Include="..\CellCountX.Py\cellpose\Lib\**\*"
-                   Exclude="..\CellCountX.Py\cellpose\pyvenv.cfg;7
-                            ..\CellCountX.Py\cellpose\.gitignore" />
+                   Exclude="..\CellCountX.Py\cellpose\pyvenv.cfg;
+                            ..\CellCountX.Py\cellpose\.gitignore;
+                            ..\CellCountX.Py\cellpose\Lib\**\__pycache__\**" />
     </ItemGroup>
 
     <!-- 展開した Python をコピー -->
@@ -65,8 +66,16 @@
     <Copy SourceFiles="..\CellCountX.Py\server.py"
           DestinationFolder="$(OutDir)" />
 
-    <!-- nonadherent_filter.py -->
-    <Copy SourceFiles="..\CellCountX.Py\nonadherent_filter.py"
+    <!-- rf_filter.py -->
+    <Copy SourceFiles="..\CellCountX.Py\rf_filter.py"
+          DestinationFolder="$(OutDir)" />
+
+    <!-- overlay.py -->
+    <Copy SourceFiles="..\CellCountX.Py\overlay.py"
+          DestinationFolder="$(OutDir)" />
+
+    <!-- rf_keep_adherent.pkl -->
+    <Copy SourceFiles="..\CellCountX.Py\rf_keep_adherent.pkl"
           DestinationFolder="$(OutDir)" />
   </Target>
 
@@ -81,7 +90,8 @@
       <ExtractedPythonFiles Include="$(PythonExtractDir)**\*" />
       <PythonFiles Include="..\CellCountX.Py\cellpose\Lib\**\*"
                    Exclude="..\CellCountX.Py\cellpose\pyvenv.cfg;
-                            ..\CellCountX.Py\cellpose\.gitignore" />
+                            ..\CellCountX.Py\cellpose\.gitignore;
+                            ..\CellCountX.Py\cellpose\Lib\**\__pycache__\**" />
     </ItemGroup>
 
     <!-- 展開した Python をコピー -->
@@ -100,27 +110,46 @@
     <Copy SourceFiles="..\CellCountX.Py\server.py"
           DestinationFolder="$(PublishDir)" />
 
-    <!-- nonadherent_filter.py -->
-    <Copy SourceFiles="..\CellCountX.Py\nonadherent_filter.py"
+    <!-- rf_filter.py -->
+    <Copy SourceFiles="..\CellCountX.Py\rf_filter.py"
+          DestinationFolder="$(PublishDir)" />
+
+    <!-- overlay.py -->
+    <Copy SourceFiles="..\CellCountX.Py\overlay.py"
+          DestinationFolder="$(PublishDir)" />
+
+    <!-- rf_keep_adherent.pkl -->
+    <Copy SourceFiles="..\CellCountX.Py\rf_keep_adherent.pkl"
           DestinationFolder="$(PublishDir)" />
   </Target>
 
   <!-- ============================
-       Clean 時に python/ と server.py と nonadherent_filter.py を削除
+       Clean 時に以下を削除
+       - python/
+       - server.py
+       - rf_filter.py
+       - overlay.py
+       - rf_keep_adherent.pkl
        ============================ -->
   <Target Name="CleanCopiedPython"
           BeforeTargets="Clean"
           Condition="'$(Configuration)' == 'Release'">
 
     <!-- Build 出力 -->
+    <RemoveDir Directories="$(OutDir)__pycache__" />
     <RemoveDir Directories="$(OutDir)python" />
     <Delete Files="$(OutDir)server.py" />
-    <Delete Files="$(OutDir)nonadherent_filter.py" />
+    <Delete Files="$(OutDir)rf_filter.py" />
+    <Delete Files="$(OutDir)overlay.py" />
+    <Delete Files="$(OutDir)rf_keep_adherent.pkl" />
 
     <!-- Publish 出力 -->
+    <RemoveDir Directories="$(PublishDir)__pycache__" />
     <RemoveDir Directories="$(PublishDir)python" />
     <Delete Files="$(PublishDir)server.py" />
-    <Delete Files="$(PublishDir)nonadherent_filter.py" />
+    <Delete Files="$(PublishDir)rf_filter.py" />
+    <Delete Files="$(PublishDir)overlay.py" />
+    <Delete Files="$(PublishDir)rf_keep_adherent.pkl" />
   </Target>
 
   <!-- ============================
