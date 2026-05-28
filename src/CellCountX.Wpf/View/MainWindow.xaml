@@ -32,20 +32,12 @@
         <!-- メインコンテンツ -->
         <Grid Margin="20" DockPanel.Dock="Top">
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <!-- 入力フォルダ -->
-                <RowDefinition Height="Auto"/>
-                <!-- 出力フォルダ -->
-                <RowDefinition Height="Auto"/>
-                <!-- GPU -->
-                <RowDefinition Height="Auto"/>
-                <!-- 非接着細胞除去 ON/OFF -->
-                <RowDefinition Height="Auto"/>
-                <!-- 非接着細胞除去 -->
-                <RowDefinition Height="*"/>
-                <!-- ログ -->
-                <RowDefinition Height="Auto"/>
-                <!-- 実行ボタン -->
+                <RowDefinition Height="Auto"/> <!-- 入力フォルダ -->
+                <RowDefinition Height="Auto"/> <!-- 出力フォルダ -->
+                <RowDefinition Height="Auto"/> <!-- GPU -->
+                <RowDefinition Height="Auto"/> <!-- 接着細胞フィルタ（Random Forest） -->
+                <RowDefinition Height="*"/>    <!-- ログ -->
+                <RowDefinition Height="Auto"/> <!-- 実行ボタン -->
             </Grid.RowDefinitions>
 
             <!-- 0. 入力フォルダ -->
@@ -92,47 +84,22 @@
             <CheckBox Grid.Row="2"
                       Content="GPU を使用する"
                       IsChecked="{Binding UseGpu, Mode=TwoWay}"
+                      HorizontalAlignment="Left"
+                      HorizontalContentAlignment="Left"
                       Margin="0,10,0,10"
                       FontSize="14"/>
 
-            <!-- 3. 非接着細胞除去 ON/OFF -->
+            <!-- 3. 接着細胞フィルタ（Random Forest） -->
             <CheckBox Grid.Row="3"
-                      Content="非接着細胞除去を有効にする"
-                      IsChecked="{Binding RemoveNonAdherents, Mode=TwoWay}"
+                      Content="接着細胞フィルタ（Random Forest）を有効にする"
+                      IsChecked="{Binding UseRfFilter, Mode=TwoWay}"
+                      HorizontalAlignment="Left"
+                      HorizontalContentAlignment="Left"
                       Margin="0,10,0,10"
                       FontSize="14"/>
 
-            <!-- 4. 非接着細胞除去パラメータ -->
-            <GroupBox Grid.Row="4"
-                      Header="非接着細胞除去（Cellpose 後処理）"
-                      Margin="0,10,0,10"
-                      Visibility="{Binding RemoveNonAdherents, Converter={StaticResource BoolToVis}}">
-                <StackPanel Margin="10">
-
-                    <UniformGrid Columns="2" Rows="4" Margin="0,5,0,0">
-
-                        <TextBlock Text="最小面積 (min_area)" VerticalAlignment="Center"/>
-                        <TextBox Text="{Binding MinArea, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat=F0}"
-                     Width="80" Margin="5" HorizontalAlignment="Right"/>
-
-                        <TextBlock Text="最大円形度 (max_circularity)" VerticalAlignment="Center"/>
-                        <TextBox Text="{Binding MaxCircularity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat=F3}"
-                     Width="80" Margin="5" HorizontalAlignment="Right"/>
-
-                        <TextBlock Text="最大輝度 (max_intensity)" VerticalAlignment="Center"/>
-                        <TextBox Text="{Binding MaxIntensity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat=F1}"
-                     Width="80" Margin="5" HorizontalAlignment="Right"/>
-
-                        <TextBlock Text="最小分散 (min_variance)" VerticalAlignment="Center"/>
-                        <TextBox Text="{Binding MinVariance, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat=F2}"
-                     Width="80" Margin="5" HorizontalAlignment="Right"/>
-
-                    </UniformGrid>
-                </StackPanel>
-            </GroupBox>
-
-            <!-- 5. ログ -->
-            <GroupBox Grid.Row="5" Header="ログ" Margin="0,10,0,10">
+            <!-- 4. ログ -->
+            <GroupBox Grid.Row="4" Header="ログ" Margin="0,10,0,10">
                 <ScrollViewer x:Name="LogScrollViewer"
                               VerticalScrollBarVisibility="Auto">
                     <TextBlock Text="{Binding LogText}"
@@ -142,8 +109,8 @@
                 </ScrollViewer>
             </GroupBox>
 
-            <!-- 6. 実行ボタン -->
-            <StackPanel Grid.Row="6" Orientation="Vertical">
+            <!-- 5. 実行ボタン -->
+            <StackPanel Grid.Row="5" Orientation="Vertical">
                 <ProgressBar Height="20"
                              Minimum="0"
                              Maximum="100"

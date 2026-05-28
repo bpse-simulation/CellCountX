@@ -8,19 +8,7 @@
     <Setting Name="TimeoutSeconds" Type="System.Int32" Scope="User">
       <Value Profile="(Default)">600</Value>
     </Setting>
-    <Setting Name="MinArea" Type="System.Int32" Scope="User">
-      <Value Profile="(Default)">0</Value>
-    </Setting>
-    <Setting Name="MaxCircularity" Type="System.Double" Scope="User">
-      <Value Profile="(Default)">1</Value>
-    </Setting>
-    <Setting Name="MaxIntensity" Type="System.Double" Scope="User">
-      <Value Profile="(Default)">255</Value>
-    </Setting>
-    <Setting Name="MinVariance" Type="System.Double" Scope="User">
-      <Value Profile="(Default)">0</Value>
-    </Setting>
-    <Setting Name="RemoveNonAdherents" Type="System.Boolean" Scope="User">
+    <Setting Name="UseRfFilter" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">False</Value>
     </Setting>
   </Settings>
