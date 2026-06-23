@@ -12,4 +12,8 @@ public class BatchRequest
 
     // RF フィルタ使用の有無（UI → Python へ渡す）
     public bool UseRfFilter { get; set; }
+
+    // Cellpose モデルパス（.npy）
+    // 空欄または null の場合は server.py 側で "cpsam_v2" を使用
+    public string? CellposeModelPath { get; set; }
 }

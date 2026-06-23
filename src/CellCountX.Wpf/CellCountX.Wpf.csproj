@@ -77,6 +77,11 @@
     <!-- rf_keep_adherent.pkl -->
     <Copy SourceFiles="..\CellCountX.Py\rf_keep_adherent.pkl"
           DestinationFolder="$(OutDir)" />
+
+    <!-- Cellpose バージョン取得スクリプト -->
+    <Copy SourceFiles="..\CellCountX.Py\get_cellpose_version.py"
+          DestinationFolder="$(OutDir)" />
+
   </Target>
 
   <!-- ============================
@@ -121,6 +126,11 @@
     <!-- rf_keep_adherent.pkl -->
     <Copy SourceFiles="..\CellCountX.Py\rf_keep_adherent.pkl"
           DestinationFolder="$(PublishDir)" />
+
+    <!-- Cellpose バージョン取得スクリプト -->
+    <Copy SourceFiles="..\CellCountX.Py\get_cellpose_version.py"
+          DestinationFolder="$(PublishDir)" />
+
   </Target>
 
   <!-- ============================
@@ -130,6 +140,7 @@
        - rf_filter.py
        - overlay.py
        - rf_keep_adherent.pkl
+       - get_cellpose_version.py
        ============================ -->
   <Target Name="CleanCopiedPython"
           BeforeTargets="Clean"
@@ -142,6 +153,7 @@
     <Delete Files="$(OutDir)rf_filter.py" />
     <Delete Files="$(OutDir)overlay.py" />
     <Delete Files="$(OutDir)rf_keep_adherent.pkl" />
+    <Delete Files="$(OutDir)get_cellpose_version.py" />
 
     <!-- Publish 出力 -->
     <RemoveDir Directories="$(PublishDir)__pycache__" />
@@ -150,6 +162,7 @@
     <Delete Files="$(PublishDir)rf_filter.py" />
     <Delete Files="$(PublishDir)overlay.py" />
     <Delete Files="$(PublishDir)rf_keep_adherent.pkl" />
+    <Delete Files="$(PublishDir)get_cellpose_version.py" />
   </Target>
 
   <!-- ============================
