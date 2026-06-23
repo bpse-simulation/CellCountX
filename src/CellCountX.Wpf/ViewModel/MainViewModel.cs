@@ -202,6 +202,9 @@ public class MainViewModel : INotifyPropertyChanged
             TimeoutSeconds = TimeoutSeconds,
 
             UseRfFilter = UseRfFilter,
+
+            // Cellpose モデルパスを Python に渡す
+            CellposeModelPath = Properties.Settings.Default.CellposeModelPath
         };
 
         await _processor.StartAsync(req, _cts.Token);

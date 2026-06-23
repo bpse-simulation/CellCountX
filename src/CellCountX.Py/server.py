@@ -39,9 +39,20 @@ def suppress_stderr():
 def can_use_gpu():
     return torch.cuda.is_available()
 
-def load_model(use_gpu):
+# ---------------------------------------------------------
+# Cellpose v4: モデルロード（pretrained_model のみ使用）
+# ---------------------------------------------------------
+def load_model(use_gpu, custom_model_path):
     with suppress_stderr():
-        return models.CellposeModel(gpu=use_gpu)
+        if custom_model_path:
+            # GUI で指定された .npy モデルを使用
+            return models.CellposeModel(
+                gpu=use_gpu,
+                pretrained_model=custom_model_path
+            )
+        else:
+            # デフォルトモデル（cpsam_v2）
+            return models.CellposeModel(gpu=use_gpu)
 
 def run_inference(model, image, flow_th, cellprob_th):
     with suppress_stderr():
@@ -82,9 +93,13 @@ def main():
         else:
             image_gray = image
 
-        # Cellpose
+        # ---------------------------------------------------------
+        # Cellpose モデルロード
+        # ---------------------------------------------------------
         use_gpu = bool(data.get("gpu", False)) and can_use_gpu()
-        model = load_model(use_gpu)
+        custom_model_path = data.get("custom_model", None)
+
+        model = load_model(use_gpu, custom_model_path)
 
         flow_th = float(data.get("flow_threshold", 0.4))
         cellprob_th = float(data.get("cellprob_threshold", 0.0))
@@ -145,6 +160,7 @@ def main():
             "mask_path": mask_path,
             "overlay_path": overlay_path,
             "rf_filter_used": use_rf,
+            "custom_model_used": bool(custom_model_path)
         }
 
         print(json.dumps(result), flush=True)

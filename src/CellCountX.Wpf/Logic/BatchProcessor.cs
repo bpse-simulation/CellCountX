@@ -64,6 +64,9 @@ public class BatchProcessor(PythonClient python)
 
                 // RF フィルタの使用有無
                 use_rf_filter = req.UseRfFilter,
+
+                // Cellpose モデルパス
+                custom_model = req.CellposeModelPath
             };
 
             string json = JsonSerializer.Serialize(payload);
