@@ -9,6 +9,7 @@ public class PythonServer
     private readonly string _pythonExe;
     private readonly string _serverScript;
     private readonly string _workingDir;
+    private readonly string _versionScript;
 
     private Process? _process;
 
@@ -21,12 +22,14 @@ public class PythonServer
 
         string distPython = Path.Combine(baseDir, "python", "python.exe");
         string distServer = Path.Combine(baseDir, "server.py");
+        string distVersionScript = Path.Combine(baseDir, "get_cellpose_version.py");
 
         if (File.Exists(distPython) && File.Exists(distServer))
         {
             _pythonExe = distPython;
             _serverScript = distServer;
             _workingDir = baseDir;
+            _versionScript = distVersionScript;
             return;
         }
 
@@ -36,16 +39,63 @@ public class PythonServer
         string devRoot = Path.GetFullPath(Path.Combine(baseDir, @"..\..\..\..\"));
         string devPython = Path.Combine(devRoot, "CellCountX.Py", "cellpose", "Scripts", "python.exe");
         string devServer = Path.Combine(devRoot, "CellCountX.Py", "server.py");
+        string devVersionScript = Path.Combine(devRoot, "CellCountX.Py", "get_cellpose_version.py");
 
         if (File.Exists(devPython) && File.Exists(devServer))
         {
             _pythonExe = devPython;
             _serverScript = devServer;
             _workingDir = Path.Combine(devRoot, "CellCountX.Py");
+            _versionScript = devVersionScript;
             return;
         }
 
         throw new Exception("python.exe と server.py が見つかりません。");
+    }
+
+    // ---------------------------------------------------------
+    // Cellpose バージョン取得（追加）
+    // ---------------------------------------------------------
+    public string? GetCellposeVersion()
+    {
+        if (!File.Exists(_versionScript))
+            return null;
+
+        var psi = new ProcessStartInfo
+        {
+            FileName = _pythonExe,
+            Arguments = $"\"{_versionScript}\"",
+            WorkingDirectory = _workingDir,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            StandardOutputEncoding = Encoding.UTF8,
+            StandardErrorEncoding = Encoding.UTF8
+        };
+
+        try
+        {
+            using var p = Process.Start(psi);
+            if (p == null)
+                return null;
+
+            string output = p.StandardOutput.ReadToEnd().Trim();
+            string error = p.StandardError.ReadToEnd().Trim();
+
+            p.WaitForExit(5000);
+
+            if (!string.IsNullOrEmpty(error))
+                return null;
+
+            // {"cellpose_version": "4.2.1.1"} をパース
+            var json = System.Text.Json.JsonDocument.Parse(output);
+            return json.RootElement.GetProperty("cellpose_version").GetString();
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     // ---------------------------------------------------------

@@ -16,6 +16,9 @@ public class BatchProcessor(PythonClient python)
 
     public async Task StartAsync(BatchRequest req, CancellationToken token)
     {
+        // バッチ処理開始時に使用モデルをログ出力
+        Log?.Invoke($"使用モデル: {(string.IsNullOrEmpty(req.CellposeModelPath) ? "cpsam_v2" : req.CellposeModelPath)}");
+
         // 全角パスチェック
         if (req.InputFolder.Any(c => c > 127))
         {

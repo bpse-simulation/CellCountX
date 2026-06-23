@@ -113,6 +113,7 @@ public class MainViewModel : INotifyPropertyChanged
     // 内部
     // ---------------------------------------------------------
     private readonly BatchProcessor _processor;
+    private readonly PythonServer _pythonServer;   // ★ 追加：バージョン取得のため保持
     private CancellationTokenSource? _cts;
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -126,12 +127,13 @@ public class MainViewModel : INotifyPropertyChanged
         var savedTimeout = Properties.Settings.Default.TimeoutSeconds;
         TimeoutSeconds = savedTimeout > 0 ? savedTimeout : GetAutoTimeout(UseGpu);
 
-        // RandomForest フィルターの ON/OFF を復元
         UseRfFilter = Properties.Settings.Default.UseRfFilter;
 
-        // PythonServer → PythonClient → BatchProcessor の構成
-        var pythonServer = new PythonServer();
-        var pythonClient = new PythonClient(pythonServer);
+        // ---------------------------------------------------------
+        // PythonServer → PythonClient → BatchProcessor
+        // ---------------------------------------------------------
+        _pythonServer = new PythonServer();                 // ★ 追加：保持する
+        var pythonClient = new PythonClient(_pythonServer);
         _processor = new BatchProcessor(pythonClient);
 
         // イベント購読
@@ -142,6 +144,16 @@ public class MainViewModel : INotifyPropertyChanged
             IsRunning = false;
             AppendLog("処理が完了しました。");
         };
+
+        // ---------------------------------------------------------
+        // ★ 起動時に Cellpose バージョンをログ出力
+        // ---------------------------------------------------------
+        Task.Run(() =>
+        {
+            var ver = _pythonServer.GetCellposeVersion();
+            if (!string.IsNullOrEmpty(ver))
+                AppendLog($"Cellpose バージョン: {ver}");
+        });
 
         // コマンド
         BrowseFolderCommand = new RelayCommand(_ => BrowseFolder());
@@ -200,7 +212,6 @@ public class MainViewModel : INotifyPropertyChanged
             OutputFolder = OutputFolder,
             UseGpu = UseGpu,
             TimeoutSeconds = TimeoutSeconds,
-
             UseRfFilter = UseRfFilter,
 
             // Cellpose モデルパスを Python に渡す
