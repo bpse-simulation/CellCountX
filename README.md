@@ -56,7 +56,7 @@ RF の出力：
 
 ### 📦 Embeddable Python を ZIP から自動展開
 
-- `python-3.10.11-embed-amd64.zip` を Release ビルド時に自動展開
+- `python-3.12.10-embed-amd64.zip` を Release ビルド時に自動展開
 - `_pth` ファイルをテンプレートから生成
 - site-packages（CellPose など）を自動コピー（__pycache__ は除外）
 
@@ -89,8 +89,8 @@ CellCountX.Wpf/
 ├── Logic/
 ├── Model/
 ├── python_embed/
-│   └── python310._pth.template
-├── python-3.10.11-embed-amd64.zip
+│   └── python312._pth.template
+├── python-3.12.10-embed-amd64.zip
 └── CellCountX.Wpf.csproj
 ```
 
@@ -116,9 +116,9 @@ CellCountX/
 ├── rf_keep_adherent.pkl
 └── python/
     ├── python.exe
-    ├── python310.dll
-    ├── python310.zip
-    ├── python310._pth
+    ├── python312.dll
+    ├── python312.zip
+    ├── python312._pth
     └── site-packages/
 ```
 
@@ -197,7 +197,7 @@ CellPose が Unicode パスに対応していないため。
 ## 🛠 開発者向け：Embeddable Python の準備
 
 ```
-CellCountX.Wpf/python-3.10.11-embed-amd64.zip
+CellCountX.Wpf/python-3.12.10-embed-amd64.zip
 ```
 
 - ZIP は Git に含める  

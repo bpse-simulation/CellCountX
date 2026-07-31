@@ -11,7 +11,7 @@
 
   <!-- ZIP ファイルを Item として定義 -->
   <ItemGroup>
-    <PythonZip Include="python-3.10.11-embed-amd64.zip" />
+    <PythonZip Include="python-3.12.10-embed-amd64.zip" />
   </ItemGroup>
 
   <!-- ============================
@@ -59,8 +59,8 @@
           DestinationFolder="$(OutDir)python\%(RecursiveDir)" />
 
     <!-- pth -->
-    <Copy SourceFiles="python_embed\python310._pth.template"
-          DestinationFiles="$(OutDir)python\python310._pth" />
+    <Copy SourceFiles="python_embed\python312._pth.template"
+          DestinationFiles="$(OutDir)python\python312._pth" />
 
     <!-- server.py -->
     <Copy SourceFiles="..\CellCountX.Py\server.py"
@@ -108,8 +108,8 @@
           DestinationFolder="$(PublishDir)python\%(RecursiveDir)" />
 
     <!-- pth -->
-    <Copy SourceFiles="python_embed\python310._pth.template"
-          DestinationFiles="$(PublishDir)python\python310._pth" />
+    <Copy SourceFiles="python_embed\python312._pth.template"
+          DestinationFiles="$(PublishDir)python\python312._pth" />
 
     <!-- server.py -->
     <Copy SourceFiles="..\CellCountX.Py\server.py"
