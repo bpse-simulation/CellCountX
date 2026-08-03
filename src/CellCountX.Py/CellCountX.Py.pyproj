@@ -25,19 +25,11 @@
   <ItemGroup>
     <Compile Include="get_cellpose_version.py" />
     <Compile Include="overlay.py" />
-    <Compile Include="rf_filter.py" />
+    <Compile Include="remove_edge_cells.py" />
     <Compile Include="server.py" />
-    <Compile Include="train\extract_features_folder.py" />
-    <Compile Include="train\rf_filter_batch.py" />
-    <Compile Include="train\train_rf_keep_adherent.py" />
   </ItemGroup>
   <ItemGroup>
     <Content Include=".gitignore" />
-    <Content Include="train\all_objects_features.csv" />
-    <Content Include="rf_keep_adherent.pkl" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="train\" />
   </ItemGroup>
   <ItemGroup>
     <Interpreter Include="cellpose\">

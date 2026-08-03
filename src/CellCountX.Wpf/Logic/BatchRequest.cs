@@ -10,10 +10,15 @@ public class BatchRequest
     // 詳細設定で上書きされる可能性がある
     public int TimeoutSeconds { get; set; }
 
-    // RF フィルタ使用の有無（UI → Python へ渡す）
-    public bool UseRfFilter { get; set; }
-
     // Cellpose モデルパス（.npy）
     // 空欄または null の場合は server.py 側で "cpsam_v2" を使用
     public string? CellposeModelPath { get; set; }
+
+    // 境界フィルタリングの有効化
+    public bool UseEdgeFilter { get; set; }
+    public bool UseEdgeTop { get; set; }
+    public bool UseEdgeBottom { get; set; }
+    public bool UseEdgeLeft { get; set; }
+    public bool UseEdgeRight { get; set; }
+    public int EdgeMargin { get; set; }
 }

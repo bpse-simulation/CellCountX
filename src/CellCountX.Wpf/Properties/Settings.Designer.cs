@@ -12,7 +12,7 @@ namespace CellCountX.Wpf.Properties {
     
     
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "18.7.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "18.8.0.0")]
     internal sealed partial class Settings : global::System.Configuration.ApplicationSettingsBase {
         
         private static Settings defaultInstance = ((Settings)(global::System.Configuration.ApplicationSettingsBase.Synchronized(new Settings())));
@@ -49,18 +49,6 @@ namespace CellCountX.Wpf.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("False")]
-        public bool UseRfFilter {
-            get {
-                return ((bool)(this["UseRfFilter"]));
-            }
-            set {
-                this["UseRfFilter"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("")]
         public string CellposeModelPath {
             get {
@@ -68,6 +56,78 @@ namespace CellCountX.Wpf.Properties {
             }
             set {
                 this["CellposeModelPath"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool UseEdgeFilter {
+            get {
+                return ((bool)(this["UseEdgeFilter"]));
+            }
+            set {
+                this["UseEdgeFilter"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool UseEdgeTop {
+            get {
+                return ((bool)(this["UseEdgeTop"]));
+            }
+            set {
+                this["UseEdgeTop"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool UseEdgeBottom {
+            get {
+                return ((bool)(this["UseEdgeBottom"]));
+            }
+            set {
+                this["UseEdgeBottom"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool UseEdgeLeft {
+            get {
+                return ((bool)(this["UseEdgeLeft"]));
+            }
+            set {
+                this["UseEdgeLeft"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool UseEdgeRight {
+            get {
+                return ((bool)(this["UseEdgeRight"]));
+            }
+            set {
+                this["UseEdgeRight"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("2")]
+        public int EdgeMargin {
+            get {
+                return ((int)(this["EdgeMargin"]));
+            }
+            set {
+                this["EdgeMargin"] = value;
             }
         }
     }

@@ -5,6 +5,7 @@ import warnings
 import contextlib
 import tifffile
 import torch
+import numpy as np
 from cellpose import models
 from cellpose.io import imread
 
@@ -12,15 +13,11 @@ from cellpose.io import imread
 base_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
 sys.path.insert(0, base_dir)
 
-from rf_filter import (
-    RF_MODEL,
-    extract_features_and_predict,
-    relabel_sequential
-)
+from remove_edge_cells import remove_edge_cells
 
 from overlay import (
     create_overlay,
-    create_overlay_rf
+    create_overlay_removed
 )
 
 # ---------------------------------------------------------
@@ -40,7 +37,7 @@ def can_use_gpu():
     return torch.cuda.is_available()
 
 # ---------------------------------------------------------
-# Cellpose v4: モデルロード（pretrained_model のみ使用）
+# Cellpose: モデルロード
 # ---------------------------------------------------------
 def load_model(use_gpu, custom_model_path):
     with suppress_stderr():
@@ -67,6 +64,19 @@ def read_input():
     if not line:
         raise ValueError("no input")
     return json.loads(line)
+
+# ---------------------------------------------------------
+# ラベル付け直し
+# ---------------------------------------------------------
+def relabel_sequential(mask):
+    unique_labels = np.unique(mask)
+    unique_labels = unique_labels[unique_labels != 0]
+
+    new_mask = np.zeros_like(mask)
+    for new_id, old_id in enumerate(unique_labels, start=1):
+        new_mask[mask == old_id] = new_id
+
+    return new_mask
 
 # ---------------------------------------------------------
 # メイン処理
@@ -120,30 +130,51 @@ def main():
 
         original_count = int(masks.max())
 
-        if masks.ndim == 3 and masks.shape[-1] == 1:
-            masks = masks[:, :, 0]
+        # 安全な squeeze
+        masks = np.squeeze(masks)
 
         # ---------------------------------------------------------
-        # RF フィルタ
+        # 境界細胞除去（4方向 ON/OFF）
         # ---------------------------------------------------------
-        use_rf = data.get("use_rf_filter", False)
+        use_edge_filter = data.get("use_edge_filter", False)
 
-        if use_rf:
-            _, _, pred, keep_mask, remove_mask = extract_features_and_predict(
-                image_gray, masks, RF_MODEL
+        use_top    = data.get("use_edge_top", True)
+        use_bottom = data.get("use_edge_bottom", True)
+        use_left   = data.get("use_edge_left", True)
+        use_right  = data.get("use_edge_right", True)
+
+        margin = int(data.get("edge_margin", 2))
+
+        original_masks = masks.copy()
+
+        if use_edge_filter:
+            cleaned_masks, edge_labels = remove_edge_cells(
+                masks,
+                use_top=use_top,
+                use_bottom=use_bottom,
+                use_left=use_left,
+                use_right=use_right,
+                margin=margin
             )
-            masks = relabel_sequential(keep_mask)
+            masks = relabel_sequential(cleaned_masks)
+
+            edge_removed_mask = np.zeros_like(original_masks)
+            for lbl in edge_labels:
+                edge_removed_mask[original_masks == lbl] = lbl
         else:
-            keep_mask = None
-            remove_mask = None
+            edge_removed_mask = None
 
         filtered_count = int(masks.max())
 
         # ---------------------------------------------------------
         # overlay
         # ---------------------------------------------------------
-        if use_rf:
-            overlay = create_overlay_rf(image_gray, keep_mask, remove_mask)
+        if use_edge_filter:
+            overlay = create_overlay_removed(
+                image_gray,
+                cleaned_masks,     # keep_mask（境界除去後のマスク）
+                edge_removed_mask  # remove_mask（境界除去された細胞）
+            )
         else:
             overlay = create_overlay(image_gray, masks)
 
@@ -159,7 +190,12 @@ def main():
             "gpu_used": use_gpu,
             "mask_path": mask_path,
             "overlay_path": overlay_path,
-            "rf_filter_used": use_rf,
+            "edge_filter_used": use_edge_filter,
+            "edge_top": use_top,
+            "edge_bottom": use_bottom,
+            "edge_left": use_left,
+            "edge_right": use_right,
+            "edge_margin": margin,
             "custom_model_used": bool(custom_model_path)
         }
 
