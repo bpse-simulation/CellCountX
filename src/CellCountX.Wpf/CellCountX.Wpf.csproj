@@ -21,7 +21,6 @@
           BeforeTargets="CopyPythonOnBuild;CopyPythonOnPublish"
           Condition="'$(Configuration)' == 'Release'">
 
-    <!-- ZIP と同名フォルダを展開先にする -->
     <PropertyGroup>
       <PythonExtractDir>$(IntermediateOutputPath)%(PythonZip.Filename)\</PythonExtractDir>
     </PropertyGroup>
@@ -66,16 +65,12 @@
     <Copy SourceFiles="..\CellCountX.Py\server.py"
           DestinationFolder="$(OutDir)" />
 
-    <!-- rf_filter.py -->
-    <Copy SourceFiles="..\CellCountX.Py\rf_filter.py"
+    <!-- remove_edge_cells.py -->
+    <Copy SourceFiles="..\CellCountX.Py\remove_edge_cells.py"
           DestinationFolder="$(OutDir)" />
 
     <!-- overlay.py -->
     <Copy SourceFiles="..\CellCountX.Py\overlay.py"
-          DestinationFolder="$(OutDir)" />
-
-    <!-- rf_keep_adherent.pkl -->
-    <Copy SourceFiles="..\CellCountX.Py\rf_keep_adherent.pkl"
           DestinationFolder="$(OutDir)" />
 
     <!-- Cellpose バージョン取得スクリプト -->
@@ -115,16 +110,12 @@
     <Copy SourceFiles="..\CellCountX.Py\server.py"
           DestinationFolder="$(PublishDir)" />
 
-    <!-- rf_filter.py -->
-    <Copy SourceFiles="..\CellCountX.Py\rf_filter.py"
+    <!-- remove_edge_cells.py -->
+    <Copy SourceFiles="..\CellCountX.Py\remove_edge_cells.py"
           DestinationFolder="$(PublishDir)" />
 
     <!-- overlay.py -->
     <Copy SourceFiles="..\CellCountX.Py\overlay.py"
-          DestinationFolder="$(PublishDir)" />
-
-    <!-- rf_keep_adherent.pkl -->
-    <Copy SourceFiles="..\CellCountX.Py\rf_keep_adherent.pkl"
           DestinationFolder="$(PublishDir)" />
 
     <!-- Cellpose バージョン取得スクリプト -->
@@ -135,12 +126,6 @@
 
   <!-- ============================
        Clean 時に以下を削除
-       - python/
-       - server.py
-       - rf_filter.py
-       - overlay.py
-       - rf_keep_adherent.pkl
-       - get_cellpose_version.py
        ============================ -->
   <Target Name="CleanCopiedPython"
           BeforeTargets="Clean"
@@ -150,18 +135,16 @@
     <RemoveDir Directories="$(OutDir)__pycache__" />
     <RemoveDir Directories="$(OutDir)python" />
     <Delete Files="$(OutDir)server.py" />
-    <Delete Files="$(OutDir)rf_filter.py" />
+    <Delete Files="$(OutDir)remove_edge_cells.py" />
     <Delete Files="$(OutDir)overlay.py" />
-    <Delete Files="$(OutDir)rf_keep_adherent.pkl" />
     <Delete Files="$(OutDir)get_cellpose_version.py" />
 
     <!-- Publish 出力 -->
     <RemoveDir Directories="$(PublishDir)__pycache__" />
     <RemoveDir Directories="$(PublishDir)python" />
     <Delete Files="$(PublishDir)server.py" />
-    <Delete Files="$(PublishDir)rf_filter.py" />
+    <Delete Files="$(PublishDir)remove_edge_cells.py" />
     <Delete Files="$(PublishDir)overlay.py" />
-    <Delete Files="$(PublishDir)rf_keep_adherent.pkl" />
     <Delete Files="$(PublishDir)get_cellpose_version.py" />
   </Target>
 
