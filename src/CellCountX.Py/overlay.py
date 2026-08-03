@@ -2,7 +2,7 @@ import numpy as np
 from scipy.ndimage import binary_erosion
 
 # ---------------------------------------------------------
-# 通常 overlay（赤）
+# 通常 overlay（緑のみ）
 # ---------------------------------------------------------
 def create_overlay(image, masks):
     if image.ndim == 2:
@@ -22,13 +22,21 @@ def create_overlay(image, masks):
         boundaries |= boundary
 
     overlay = rgb.copy()
-    overlay[boundaries] = [255, 0, 0]
+    overlay[boundaries] = [0, 255, 0]
     return overlay
 
+
 # ---------------------------------------------------------
-# RF overlay（緑=keep / 赤=remove）
+# 境界細胞除去 overlay（緑=keep / 赤=edge removed）
 # ---------------------------------------------------------
-def create_overlay_rf(image, keep_mask, remove_mask):
+def create_overlay_removed(image, keep_mask, remove_mask):
+    """
+    original_masks : Cellpose の元マスク
+    keep_mask      : 境界除去後に残った細胞
+    remove_mask    : 境界除去で除去された細胞
+    """
+
+    # グレースケール → RGB
     if image.ndim == 2:
         rgb = np.stack([image, image, image], axis=-1)
     else:
@@ -40,7 +48,9 @@ def create_overlay_rf(image, keep_mask, remove_mask):
 
     overlay = rgb.copy()
 
-    # keep → 緑
+    # ---------------------------------------------------------
+    # 1. 緑 = keep_mask の輪郭
+    # ---------------------------------------------------------
     boundaries_keep = np.zeros_like(keep_mask, dtype=bool)
     for label in np.unique(keep_mask):
         if label == 0:
@@ -50,18 +60,20 @@ def create_overlay_rf(image, keep_mask, remove_mask):
         boundary = cell ^ eroded
         boundaries_keep |= boundary
 
-    overlay[boundaries_keep] = [0, 255, 0]
+    overlay[boundaries_keep] = [0, 255, 0]   # 緑
 
-    # remove → 赤
-    boundaries_remove = np.zeros_like(remove_mask, dtype=bool)
+    # ---------------------------------------------------------
+    # 2. 赤 = remove_mask の輪郭（境界除去された細胞）
+    # ---------------------------------------------------------
+    boundaries_removed = np.zeros_like(remove_mask, dtype=bool)
     for label in np.unique(remove_mask):
         if label == 0:
             continue
         cell = (remove_mask == label)
         eroded = binary_erosion(cell)
         boundary = cell ^ eroded
-        boundaries_remove |= boundary
+        boundaries_removed |= boundary
 
-    overlay[boundaries_remove] = [255, 0, 0]
+    overlay[boundaries_removed] = [255, 0, 0]   # 赤
 
     return overlay
