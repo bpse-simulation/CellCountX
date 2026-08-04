@@ -194,19 +194,6 @@ public class MainViewModel : INotifyPropertyChanged
             AppendLog("処理が完了しました。");
         };
 
-        // ---------------------------------------------------------
-        // Python チェックは非同期で実行（UI を止めない）
-        // ---------------------------------------------------------
-        Task.Run(() =>
-        {
-            var log = _pythonServer.CheckPythonEnvironment();
-            AppendLog(log);
-
-            var ver = _pythonServer.GetCellposeVersion();
-            if (!string.IsNullOrEmpty(ver))
-                AppendLog($"Cellpose バージョン: {ver}");
-        });
-
         // コマンド
         BrowseFolderCommand = new RelayCommand(_ => BrowseFolder());
         BrowseOutputFolderCommand = new RelayCommand(_ => BrowseOutputFolder());
@@ -291,9 +278,27 @@ public class MainViewModel : INotifyPropertyChanged
     }
 
     // ---------------------------------------------------------
+    // Python チェックは非同期で実行（UI を止めない）
+    // ---------------------------------------------------------
+    private void RunPythonEnvironmentCheck()
+    {
+        AppendLog("Python 環境チェック中…");
+
+        Task.Run(() =>
+        {
+            var log = _pythonServer.CheckPythonEnvironment();
+            AppendLog(log);
+
+            var ver = _pythonServer.GetCellposeVersion();
+            if (!string.IsNullOrEmpty(ver))
+                AppendLog($"Cellpose バージョン: {ver}");
+        });
+    }
+
+    // ---------------------------------------------------------
     // ログ追加
     // ---------------------------------------------------------
-    public void AppendLog(string message)
+    private void AppendLog(string message)
     {
         LogText += $"{DateTime.Now:HH:mm:ss}  {message}\n";
     }
@@ -301,8 +306,17 @@ public class MainViewModel : INotifyPropertyChanged
     // ---------------------------------------------------------
     // 起動ログ
     // ---------------------------------------------------------
-    public void AppendStartupLog()
+    private void AppendStartupLog()
     {
         AppendLog("CellCountX 起動");
+    }
+
+    // ---------------------------------------------------------
+    // Window Loaded 時に呼び出す
+    // ---------------------------------------------------------
+    public void OnWindowLoaded()
+    {
+        AppendStartupLog();
+        RunPythonEnvironmentCheck();
     }
 }

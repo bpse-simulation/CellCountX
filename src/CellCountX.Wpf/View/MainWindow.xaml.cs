@@ -31,8 +31,7 @@ public partial class MainWindow : Window
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
         // ViewModel に初期ログを任せる
-        _viewModel.AppendStartupLog();
-        _viewModel.AppendLog("Python 環境チェック中…");
+        _viewModel.OnWindowLoaded();
     }
 
     // ---------------------------------------------------------
