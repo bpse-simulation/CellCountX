@@ -85,19 +85,71 @@ public class MainViewModel : INotifyPropertyChanged
     }
 
     // ---------------------------------------------------------
-    // 接着細胞フィルタ（Random Forest）パラメータ（UI から調整可能）
+    // 境界細胞除去（4方向 + マージン）
     // ---------------------------------------------------------
-    private bool _useRfFilter;
-    public bool UseRfFilter
+    public bool UseEdgeFilter
     {
-        get => _useRfFilter;
+        get => Properties.Settings.Default.UseEdgeFilter;
         set
         {
-            _useRfFilter = value;
-            OnPropertyChanged(nameof(UseRfFilter));
-
-            Properties.Settings.Default.UseRfFilter = value;
+            Properties.Settings.Default.UseEdgeFilter = value;
             Properties.Settings.Default.Save();
+            OnPropertyChanged(nameof(UseEdgeFilter));
+        }
+    }
+
+    public bool UseEdgeTop
+    {
+        get => Properties.Settings.Default.UseEdgeTop;
+        set
+        {
+            Properties.Settings.Default.UseEdgeTop = value;
+            Properties.Settings.Default.Save();
+            OnPropertyChanged(nameof(UseEdgeTop));
+        }
+    }
+
+    public bool UseEdgeBottom
+    {
+        get => Properties.Settings.Default.UseEdgeBottom;
+        set
+        {
+            Properties.Settings.Default.UseEdgeBottom = value;
+            Properties.Settings.Default.Save();
+            OnPropertyChanged(nameof(UseEdgeBottom));
+        }
+    }
+
+    public bool UseEdgeLeft
+    {
+        get => Properties.Settings.Default.UseEdgeLeft;
+        set
+        {
+            Properties.Settings.Default.UseEdgeLeft = value;
+            Properties.Settings.Default.Save();
+            OnPropertyChanged(nameof(UseEdgeLeft));
+        }
+    }
+
+    public bool UseEdgeRight
+    {
+        get => Properties.Settings.Default.UseEdgeRight;
+        set
+        {
+            Properties.Settings.Default.UseEdgeRight = value;
+            Properties.Settings.Default.Save();
+            OnPropertyChanged(nameof(UseEdgeRight));
+        }
+    }
+
+    public int EdgeMargin
+    {
+        get => Properties.Settings.Default.EdgeMargin;
+        set
+        {
+            Properties.Settings.Default.EdgeMargin = value;
+            Properties.Settings.Default.Save();
+            OnPropertyChanged(nameof(EdgeMargin));
         }
     }
 
@@ -113,7 +165,7 @@ public class MainViewModel : INotifyPropertyChanged
     // 内部
     // ---------------------------------------------------------
     private readonly BatchProcessor _processor;
-    private readonly PythonServer _pythonServer;   // ★ 追加：バージョン取得のため保持
+    private readonly PythonServer _pythonServer;
     private CancellationTokenSource? _cts;
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -127,16 +179,13 @@ public class MainViewModel : INotifyPropertyChanged
         var savedTimeout = Properties.Settings.Default.TimeoutSeconds;
         TimeoutSeconds = savedTimeout > 0 ? savedTimeout : GetAutoTimeout(UseGpu);
 
-        UseRfFilter = Properties.Settings.Default.UseRfFilter;
-
         // ---------------------------------------------------------
         // PythonServer → PythonClient → BatchProcessor
         // ---------------------------------------------------------
-        _pythonServer = new PythonServer();                 // ★ 追加：保持する
+        _pythonServer = new PythonServer();
         var pythonClient = new PythonClient(_pythonServer);
         _processor = new BatchProcessor(pythonClient);
 
-        // イベント購読
         _processor.Log += msg => AppendLog(msg);
         _processor.Progress += v => ProgressValue = v;
         _processor.Completed += _ =>
@@ -146,10 +195,13 @@ public class MainViewModel : INotifyPropertyChanged
         };
 
         // ---------------------------------------------------------
-        // ★ 起動時に Cellpose バージョンをログ出力
+        // Python チェックは非同期で実行（UI を止めない）
         // ---------------------------------------------------------
         Task.Run(() =>
         {
+            var log = _pythonServer.CheckPythonEnvironment();
+            AppendLog(log);
+
             var ver = _pythonServer.GetCellposeVersion();
             if (!string.IsNullOrEmpty(ver))
                 AppendLog($"Cellpose バージョン: {ver}");
@@ -166,7 +218,7 @@ public class MainViewModel : INotifyPropertyChanged
         => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
     internal int GetAutoTimeout(bool useGpu)
-        => useGpu ? 300 : 900; // GPU: 5分, CPU: 15分
+        => useGpu ? 300 : 900;
 
     // ---------------------------------------------------------
     // フォルダ選択
@@ -212,7 +264,12 @@ public class MainViewModel : INotifyPropertyChanged
             OutputFolder = OutputFolder,
             UseGpu = UseGpu,
             TimeoutSeconds = TimeoutSeconds,
-            UseRfFilter = UseRfFilter,
+            UseEdgeFilter = UseEdgeFilter,
+            UseEdgeTop = UseEdgeTop,
+            UseEdgeBottom = UseEdgeBottom,
+            UseEdgeLeft = UseEdgeLeft,
+            UseEdgeRight = UseEdgeRight,
+            EdgeMargin = EdgeMargin,
 
             // Cellpose モデルパスを Python に渡す
             CellposeModelPath = Properties.Settings.Default.CellposeModelPath
@@ -236,7 +293,7 @@ public class MainViewModel : INotifyPropertyChanged
     // ---------------------------------------------------------
     // ログ追加
     // ---------------------------------------------------------
-    private void AppendLog(string message)
+    public void AppendLog(string message)
     {
         LogText += $"{DateTime.Now:HH:mm:ss}  {message}\n";
     }

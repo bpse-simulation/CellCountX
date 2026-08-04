@@ -58,18 +58,23 @@ public class BatchProcessor(PythonClient python)
 
             Log?.Invoke($"処理中: {Path.GetFileName(file)}");
 
-            // ★ Python に渡す JSON
+            // Python に渡す JSON
             var payload = new
             {
                 path = file,
                 gpu = req.UseGpu,
                 output = req.OutputFolder,
 
-                // RF フィルタの使用有無
-                use_rf_filter = req.UseRfFilter,
+                // Cellpose モデル
+                custom_model = req.CellposeModelPath,
 
-                // Cellpose モデルパス
-                custom_model = req.CellposeModelPath
+                // 境界細胞除去（4方向 + マージン）
+                use_edge_filter = req.UseEdgeFilter,
+                use_edge_top = req.UseEdgeTop,
+                use_edge_bottom = req.UseEdgeBottom,
+                use_edge_left = req.UseEdgeLeft,
+                use_edge_right = req.UseEdgeRight,
+                edge_margin = req.EdgeMargin
             };
 
             string json = JsonSerializer.Serialize(payload);

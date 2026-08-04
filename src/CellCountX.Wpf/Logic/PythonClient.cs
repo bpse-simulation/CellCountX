@@ -2,14 +2,9 @@
 
 namespace CellCountX.Wpf.Logic;
 
-public class PythonClient
+public class PythonClient(PythonServer server)
 {
-    private readonly PythonServer _server;
-
-    public PythonClient(PythonServer server)
-    {
-        _server = server;
-    }
+    private readonly PythonServer _server = server;
 
     public async Task<PythonResponse> RunAsync(string json, int timeoutSeconds, CancellationToken token)
     {

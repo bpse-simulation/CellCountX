@@ -33,7 +33,7 @@ jobs:
           echo "version=$tag" >> $env:GITHUB_OUTPUT
 
       # ---------------------------------------------
-      # python-runtime（分割 zip）を Pre-release から取得
+      # python-runtime（フル版用）を取得
       # ---------------------------------------------
       - name: Download python-runtime part1
         run: |
@@ -80,17 +80,23 @@ jobs:
           $xml | Set-Content $path -Encoding UTF8
 
       # ---------------------------------------------
-      # Publish（python/ は後で手動コピー）
+      # Publish（フル版）
       # ---------------------------------------------
-      - name: Publish
-        run: dotnet publish src/CellCountX.Wpf/CellCountX.Wpf.csproj -c Release -o publish
+      - name: Publish Full
+        run: dotnet publish src/CellCountX.Wpf/CellCountX.Wpf.csproj -c Release -o publish_full
 
       # ---------------------------------------------
-      # python runtime を publish に含める
+      # python runtime を publish_full に含める
       # ---------------------------------------------
-      - name: Copy python runtime into publish folder
+      - name: Copy python runtime into publish_full
         run: |
-          Copy-Item -Path python\* -Destination publish/python -Recurse
+          Copy-Item -Path python\* -Destination publish_full/python -Recurse
+
+      # ---------------------------------------------
+      # Publish（軽量版）
+      # ---------------------------------------------
+      - name: Publish Light
+        run: dotnet publish src/CellCountX.Wpf/CellCountX.Wpf.csproj -c Release -o publish_light
 
       # ---------------------------------------------
       # Release ノート自動生成
@@ -108,17 +114,26 @@ jobs:
           echo "EOF" >> $env:GITHUB_OUTPUT
 
       # ---------------------------------------------
-      # 出力を分割 zip 化（1ファイル最大 1900MB）
+      # ZIP 作成（フル版）
       # ---------------------------------------------
-      - name: Create split zip (max 1900MB per file)
+      - name: Create split zip (Full)
         run: |
-          7z a -tzip -v1900m CellCountX-${{ steps.get_version.outputs.version }}.zip publish\*
+          7z a -tzip -v1900m CellCountX-${{ steps.get_version.outputs.version }}.zip publish_full\*
 
       # ---------------------------------------------
-      # Release にアップロード（分割ファイルすべて）
+      # ZIP 作成（軽量版）
+      # ---------------------------------------------
+      - name: Create zip (Light)
+        run: |
+          7z a -tzip CellCountX-light-${{ steps.get_version.outputs.version }}.zip publish_light\*
+
+      # ---------------------------------------------
+      # Release にアップロード（フル版 + 軽量版）
       # ---------------------------------------------
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v2
         with:
-          files: CellCountX-${{ steps.get_version.outputs.version }}.zip*
+          files: |
+            CellCountX-${{ steps.get_version.outputs.version }}.zip*
+            CellCountX-light-${{ steps.get_version.outputs.version }}.zip
           body: ${{ steps.notes.outputs.body }}

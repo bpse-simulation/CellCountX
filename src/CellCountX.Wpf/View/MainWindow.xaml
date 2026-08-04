@@ -35,7 +35,7 @@
                 <RowDefinition Height="Auto"/> <!-- 入力フォルダ -->
                 <RowDefinition Height="Auto"/> <!-- 出力フォルダ -->
                 <RowDefinition Height="Auto"/> <!-- GPU -->
-                <RowDefinition Height="Auto"/> <!-- 接着細胞フィルタ（Random Forest） -->
+                <RowDefinition Height="Auto"/> <!-- 境界細胞除去 -->
                 <RowDefinition Height="*"/>    <!-- ログ -->
                 <RowDefinition Height="Auto"/> <!-- 実行ボタン -->
             </Grid.RowDefinitions>
@@ -89,14 +89,43 @@
                       Margin="0,10,0,10"
                       FontSize="14"/>
 
-            <!-- 3. 接着細胞フィルタ（Random Forest） -->
-            <CheckBox Grid.Row="3"
-                      Content="接着細胞フィルタ（Random Forest）を有効にする"
-                      IsChecked="{Binding UseRfFilter, Mode=TwoWay}"
-                      HorizontalAlignment="Left"
-                      HorizontalContentAlignment="Left"
-                      Margin="0,10,0,10"
-                      FontSize="14"/>
+            <!-- 3 境界細胞除去 -->
+            <GroupBox Grid.Row="3" Header="境界細胞除去" Margin="0,10,0,10">
+                <StackPanel Orientation="Vertical" Margin="10">
+
+                    <!-- ON/OFF -->
+                    <CheckBox Content="境界細胞除去を有効にする"
+                  IsChecked="{Binding UseEdgeFilter}" />
+
+                    <Separator Margin="5"/>
+
+                    <!-- 方向別設定 -->
+                    <TextBlock Text="除去する方向：" FontWeight="Bold" Margin="0,5,0,5"/>
+
+                    <StackPanel Orientation="Vertical" Margin="10,0,0,0">
+                        <CheckBox Content="上端（Top）"
+                      IsChecked="{Binding UseEdgeTop}" />
+                        <CheckBox Content="下端（Bottom）"
+                      IsChecked="{Binding UseEdgeBottom}" />
+                        <CheckBox Content="左端（Left）"
+                      IsChecked="{Binding UseEdgeLeft}" />
+                        <CheckBox Content="右端（Right）"
+                      IsChecked="{Binding UseEdgeRight}" />
+                    </StackPanel>
+
+                    <Separator Margin="5"/>
+
+                    <!-- マージン設定 -->
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Text="マージン（px）：" VerticalAlignment="Center"/>
+                        <TextBox Width="60" Margin="10,0,0,0"
+                     Text="{Binding EdgeMargin}" />
+                    </StackPanel>
+
+                    <TextBlock Text="※ Cellpose の境界は端から 1〜2px 内側に生成されるため、初期値は 2px を推奨します。"
+                   FontSize="11" Foreground="Gray" Margin="0,5,0,0"/>
+                </StackPanel>
+            </GroupBox>
 
             <!-- 4. ログ -->
             <GroupBox Grid.Row="4" Header="ログ" Margin="0,10,0,10">
