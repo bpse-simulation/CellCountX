@@ -1,9 +1,27 @@
 # 📘 CellCountX — CellPose を GUI から扱える画像解析アプリ
 
-CellCountX は、**CellPose + PyTorch** をバックエンドに用いて、GUI から画像フォルダを指定するだけで  
-**セルセグメンテーション・カウント・CSV 出力・輪郭オーバーレイ生成**を行う WPF アプリケーションです。
+CellCountX は **CellPose + PyTorch** をバックエンドに用いて、
+GUI から画像フォルダを指定するだけで **細胞セグメンテーション・カウント・CSV 出力・輪郭オーバーレイ生成**を行う WPF アプリケーションです。
 
-Python は **Embeddable Python** としてアプリに同梱されており、ユーザー側で Python をインストールする必要はありません。
+CellCountX には **2 種類の配布版**があります：
+
+---
+
+## 🧩 配布版の種類
+
+### 🟩 フル版（Python 同梱版）
+
+- `python/` フォルダに Embeddable Python + CellPose + PyTorch を同梱
+- ユーザーは Python をインストール不要
+- ダウンロード後すぐに CellPose が利用可能
+- サイズは大きめ（数 GB）
+
+### 🟦 軽量版（Python 非同梱版）
+
+- Python は同梱されません
+- ユーザーが自分の Python（conda / venv / PATH）を用意して使用
+- CellPose が import できる Python を自動検出
+- サイズが小さく、研究室環境での配布に向く
 
 ---
 
@@ -11,47 +29,42 @@ Python は **Embeddable Python** としてアプリに同梱されており、�
 
 ### 🧠 CellPose を利用した細胞セグメンテーション
 
-- Embeddable Python + CellPose + PyTorch を同梱
+- フル版：Embeddable Python + CellPose + PyTorch を同梱
+- 軽量版：ユーザーの Python 環境を自動検出
+    - conda の `cellpose` 環境
+    - PATH 上の Python
+    - 同梱 Python（フル版のみ）
 - server.py に JSON を渡して推論を実行
 - GPU が利用可能な環境では CUDA を使用（任意）
 
-### 🎨 輪郭オーバーレイ画像の自動生成（緑＝採用 / 赤＝除外）
+### 🎨 輪郭オーバーレイ画像の自動生成
 
-CellPose のマスクをもとに、元画像（グレースケール）へ輪郭を重ねた画像を生成します。
+CellPose のマスクをもとに、元画像へ輪郭を重ねた画像を生成します。
 
 - **採用された細胞 → 緑の輪郭**
 - **画像端で途切れた細胞（除外） → 赤の輪郭**
 
 生成されるファイル：
 
-- `{base}_overlay.png`  
+- `{base}_overlay.png`
 - `{base}_cp_masks.tif`
 
 ### 🧹 画像端の細胞除去（境界除去）
 
-CellPose は画像端にある細胞を「途切れた状態」で検出することがあります。  
-CellCountX では、以下の設定により **画像端の細胞を自動除去**できます。
+CellPose は画像端にある細胞を「途切れた状態」で検出することがあります。
+CellCountX では以下の設定により **画像端の細胞を自動除去**できます。
 
-- 上端の細胞を除去  
-- 下端の細胞を除去  
-- 左端の細胞を除去  
-- 右端の細胞を除去  
-- **マージン（px）設定**  
-  - CellPose の境界は端から 1〜2px 内側に生成されるため、初期値は 2px を推奨
+- 上端 / 下端 / 左端 / 右端
+- マージン（px）設定
+  - 初期値は 2px を推奨
 
-除去された細胞は **赤色の輪郭**でオーバーレイ画像に描画されます。
+除去された細胞は **赤色の輪郭**で描画されます。
 
 ### ⚙️ WPF (MVVM) アーキテクチャ
 
 - UI とロジックを分離
-- MainViewModel が UI 状態を管理
 - 非同期処理 + キャンセル対応
-
-### 📦 Embeddable Python を ZIP から自動展開
-
-- `python-3.12.10-embed-amd64.zip` を Release ビルド時に自動展開
-- `_pth` ファイルをテンプレートから生成
-- site-packages（CellPose など）を自動コピー（__pycache__ は除外）
+- PythonServer → PythonClient → BatchProcessor の三層構造
 
 ### 📊 バッチ処理 + CSV 出力
 
@@ -62,8 +75,8 @@ CellCountX では、以下の設定により **画像端の細胞を自動除去
 ### 🧹 タイムアウト + 安全な Kill
 
 - Python が応答しない場合はプロセスを強制終了
-- 次の画像へ自動的に進む  
-（※ タイムアウト設定は **メニュー → 詳細設定** に移動）
+- 次の画像へ自動的に進む
+- タイムアウトは **詳細設定**から変更可能
 
 ### 🔤 全角パス禁止
 
@@ -92,17 +105,19 @@ CellCountX.Wpf/
 ```
 CellCountX.Py/
 ├── server.py
+├── get_cellpose_version.py
 ├── remove_edge_cells.py
 ├── overlay.py
 └── cellpose/
 ```
 
-### 配布時の構成（Release ビルド後）
+### 配布時の構成（フル版）
 
 ```
 CellCountX/
 ├── CellCountX.exe
 ├── server.py
+├── get_cellpose_version.py
 ├── remove_edge_cells.py
 ├── overlay.py
 └── python/
@@ -113,22 +128,29 @@ CellCountX/
     └── site-packages/
 ```
 
+### 配布時の構成（軽量版）
 
+```
+CellCountX/
+├── CellCountX.exe
+├── server.py
+├── get_cellpose_version.py
+├── remove_edge_cells.py
+└── overlay.py
+```
+
+※ Python は同梱されません。
 
 ---
 
 ## 🖥️ 使い方
 
-1. **画像フォルダを選択**  
-2. **出力フォルダを選択**  
-3. **GPU 使用の有無を選択**  
-4. **境界細胞除去の設定（任意）**  
-   - 上 / 下 / 左 / 右  
-   - マージン（px）
-5. **「開始」ボタンでバッチ処理開始**  
+1. **画像フォルダを選択**
+2. **出力フォルダを選択**
+3. **GPU 使用の有無を選択**
+4. **境界細胞除去の設定（任意）**
+5. **「開始」ボタンでバッチ処理開始**
 6. **「キャンセル」で即時中断**
-
-※ タイムアウトは **メニュー → 詳細設定** から変更できます。
 
 ---
 
@@ -137,7 +159,7 @@ CellCountX/
 | 種類 | ファイル名 | 内容 |
 |------|------------|------|
 | マスク画像 | `{base}_cp_masks.tif` | CellPose のラベルマスク |
-| 輪郭オーバーレイ画像 | `{base}_overlay.png` | 緑＝採用 / 赤＝除外（境界除去） |
+| 輪郭オーバーレイ画像 | `{base}_overlay.png` | 緑＝採用 / 赤＝除外 |
 
 ---
 
@@ -149,8 +171,18 @@ CellPose が Unicode パスに対応していないため。
 
 ### 🔸 Python 実行環境について
 
+#### フル版
+
 - 配布版は **python/ フォルダ内の Embeddable Python** を使用
 - 開発時は `CellCountX.Py/` の venv を自動検出して使用
+
+#### 軽量版
+
+- conda の cellpose 環境
+- PATH 上の Python
+- venv
+
+などを自動検出して使用します。
 
 ---
 
@@ -158,7 +190,7 @@ CellPose が Unicode パスに対応していないため。
 
 ### PythonServer（C#）
 
-- Embeddable Python の python.exe を起動
+- Python を起動して server.py を実行
 - server.py に JSON を渡して推論
 - タイムアウト時はプロセスを Kill
 
@@ -190,19 +222,6 @@ CellPose が Unicode パスに対応していないため。
 
 ---
 
-## 🛠 開発者向け：Embeddable Python の準備
-
-```
-CellCountX.Wpf/python-3.12.10-embed-amd64.zip
-```
-
-
-- ZIP は Git に含める  
-- 展開後のフォルダは Git 管理しない  
-- Release ビルド時に ZIP → 展開 → python/ にコピーされる
-
----
-
 ## 🛠️ 開発者向け：CellPose バックエンド環境構築
 
 ```bash
@@ -215,16 +234,21 @@ pip install packaging
 
 ---
 
-## 🛠️ Release ビルドの自動化（csproj）
+## 🛠️ Release ビルドの自動化（GitHub Actions）
 
-Release ビルド時に以下が自動実行されます：
+GitHub Actions は 2 種類の配布版を生成します：
 
-1. Embeddable Python ZIP を展開
-2. python/ にコピー
-3. `_pth` を生成
-4. site-packages をコピー（__pycache__ は除外）
-5. server.py / remove_edge_cells.py / overlay.py を exe と同じ場所に配置
-6. Clean 時に python/ と関連ファイルを削除
+### 🟩 フル版（Python 同梱）
+
+- python-runtime をダウンロード
+- publish_full/python に展開
+- 分割 ZIP（2GB 制限対応）
+
+### 🟦 軽量版（Python 非同梱）
+
+- Python を含まない
+- publish_light を ZIP 化
+- サイズが小さい
 
 ---
 
@@ -243,26 +267,26 @@ CellCountX-vX.Y.Z.zip.001
 CellCountX-vX.Y.Z.zip.002
 ```
 
-> ⚠️ **すべて同じフォルダに保存してください。**  
+> ⚠️ **すべて同じフォルダに保存してください。**
 > 1つでも欠けていると結合できません。
 
 ### 2. ZIP を結合して展開
 
 #### 方法 A（推奨）：7-Zip で `.zip.001` を開く
 
-1. `.zip.001` を右クリック  
-2. **7-Zip → 「展開」** を選択  
+1. `.zip.001` を右クリック
+2. **7-Zip → 「展開」** を選択
 3. `.zip.002` 以降も自動的に読み込まれます
 
 > 最も簡単で確実な方法です。
 
 #### 方法 B（上級者向け）：コマンドラインで結合
 
-> ⚠️ **PowerShell では動作しません。必ず cmd.exe を使用してください。**  
+> ⚠️ **PowerShell では動作しません。必ず cmd.exe を使用してください。**
 > PowerShell は `copy /b` を内部コマンドとして扱わないためエラーになります。
 
-1. Windows の検索で **cmd** と入力し「コマンドプロンプト」を開く  
-2. 分割 ZIP があるフォルダへ移動  
+1. Windows の検索で **cmd** と入力し「コマンドプロンプト」を開く
+2. 分割 ZIP があるフォルダへ移動
 3. 以下を実行：
 
     ```cmd
@@ -283,13 +307,13 @@ CellCountX-vX.Y.Z.zip.002
 
 ## 📜 ライセンス
 
-- CellPose のライセンスに従います  
-- 本アプリケーションは MIT ライセンスを推奨します
+MIT ライセンスを推奨します。
+CellPose のライセンスに従います。
 
 ---
 
 ## 🙌 作者
 
-- 開発: BPSE-Lab  
-- アーキテクチャ設計: PythonServer / PythonClient / BatchProcessor / MVVM  
+- 開発: BPSE-Lab
+- アーキテクチャ設計: PythonServer / PythonClient / BatchProcessor / MVVM
 - 画像解析: CellPose + PyTorch
