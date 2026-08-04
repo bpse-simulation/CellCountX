@@ -165,7 +165,7 @@ public class MainViewModel : INotifyPropertyChanged
     // 内部
     // ---------------------------------------------------------
     private readonly BatchProcessor _processor;
-    private readonly PythonServer _pythonServer;   // ★ 追加：バージョン取得のため保持
+    private readonly PythonServer _pythonServer;
     private CancellationTokenSource? _cts;
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -182,11 +182,10 @@ public class MainViewModel : INotifyPropertyChanged
         // ---------------------------------------------------------
         // PythonServer → PythonClient → BatchProcessor
         // ---------------------------------------------------------
-        _pythonServer = new PythonServer();                 // ★ 追加：保持する
+        _pythonServer = new PythonServer();
         var pythonClient = new PythonClient(_pythonServer);
         _processor = new BatchProcessor(pythonClient);
 
-        // イベント購読
         _processor.Log += msg => AppendLog(msg);
         _processor.Progress += v => ProgressValue = v;
         _processor.Completed += _ =>
@@ -196,10 +195,13 @@ public class MainViewModel : INotifyPropertyChanged
         };
 
         // ---------------------------------------------------------
-        // ★ 起動時に Cellpose バージョンをログ出力
+        // Python チェックは非同期で実行（UI を止めない）
         // ---------------------------------------------------------
         Task.Run(() =>
         {
+            var log = _pythonServer.CheckPythonEnvironment();
+            AppendLog(log);
+
             var ver = _pythonServer.GetCellposeVersion();
             if (!string.IsNullOrEmpty(ver))
                 AppendLog($"Cellpose バージョン: {ver}");
@@ -216,7 +218,7 @@ public class MainViewModel : INotifyPropertyChanged
         => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
 
     internal int GetAutoTimeout(bool useGpu)
-        => useGpu ? 300 : 900; // GPU: 5分, CPU: 15分
+        => useGpu ? 300 : 900;
 
     // ---------------------------------------------------------
     // フォルダ選択
@@ -291,7 +293,7 @@ public class MainViewModel : INotifyPropertyChanged
     // ---------------------------------------------------------
     // ログ追加
     // ---------------------------------------------------------
-    private void AppendLog(string message)
+    public void AppendLog(string message)
     {
         LogText += $"{DateTime.Now:HH:mm:ss}  {message}\n";
     }

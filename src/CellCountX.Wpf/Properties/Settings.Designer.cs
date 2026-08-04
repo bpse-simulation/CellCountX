@@ -73,7 +73,7 @@ namespace CellCountX.Wpf.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
         public bool UseEdgeTop {
             get {
                 return ((bool)(this["UseEdgeTop"]));
@@ -97,7 +97,7 @@ namespace CellCountX.Wpf.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
         public bool UseEdgeLeft {
             get {
                 return ((bool)(this["UseEdgeLeft"]));
