@@ -9,17 +9,26 @@
     <ApplicationIcon>favicon_bpse.ico</ApplicationIcon>
   </PropertyGroup>
 
-  <!-- ZIP ファイルを Item として定義 -->
+  <!-- ビルド構成 -->
+  <PropertyGroup Condition="'$(Configuration)'=='ReleaseFull'">
+    <DefineConstants>FULL</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)'=='ReleaseLight'">
+    <DefineConstants>LIGHT</DefineConstants>
+  </PropertyGroup>
+
+  <!-- ZIP ファイル -->
   <ItemGroup>
     <PythonZip Include="python-3.12.10-embed-amd64.zip" />
   </ItemGroup>
 
   <!-- ============================
-       ZIP 展開（Build / Publish 共通）
+       ZIP 展開（Release / ReleaseFull）
        ============================ -->
   <Target Name="ExtractPythonZip"
           BeforeTargets="CopyPythonOnBuild;CopyPythonOnPublish"
-          Condition="'$(Configuration)' == 'Release'">
+          Condition="'$(Configuration)' == 'Release' OR '$(Configuration)' == 'ReleaseFull'">
 
     <PropertyGroup>
       <PythonExtractDir>$(IntermediateOutputPath)%(PythonZip.Filename)\</PythonExtractDir>
@@ -32,59 +41,36 @@
   </Target>
 
   <!-- ============================
-       Build 時のコピー
+       Build 時の Python コピー（Release / ReleaseFull）
        ============================ -->
   <Target Name="CopyPythonOnBuild"
           AfterTargets="Build"
-          Condition="'$(Configuration)' == 'Release'">
+          Condition="'$(Configuration)' == 'Release' OR '$(Configuration)' == 'ReleaseFull'">
 
     <ItemGroup>
-      <!-- 展開された Python -->
       <ExtractedPythonFiles Include="$(PythonExtractDir)**\*" />
-
-      <!-- cellpose ライブラリ -->
       <PythonFiles Include="..\CellCountX.Py\cellpose\Lib\**\*"
                    Exclude="..\CellCountX.Py\cellpose\pyvenv.cfg;
                             ..\CellCountX.Py\cellpose\.gitignore;
                             ..\CellCountX.Py\cellpose\Lib\**\__pycache__\**" />
     </ItemGroup>
 
-    <!-- 展開した Python をコピー -->
     <Copy SourceFiles="@(ExtractedPythonFiles)"
           DestinationFolder="$(OutDir)python\%(RecursiveDir)" />
 
-    <!-- cellpose ライブラリ -->
     <Copy SourceFiles="@(PythonFiles)"
           DestinationFolder="$(OutDir)python\%(RecursiveDir)" />
 
-    <!-- pth -->
     <Copy SourceFiles="python_embed\python312._pth.template"
           DestinationFiles="$(OutDir)python\python312._pth" />
-
-    <!-- server.py -->
-    <Copy SourceFiles="..\CellCountX.Py\server.py"
-          DestinationFolder="$(OutDir)" />
-
-    <!-- remove_edge_cells.py -->
-    <Copy SourceFiles="..\CellCountX.Py\remove_edge_cells.py"
-          DestinationFolder="$(OutDir)" />
-
-    <!-- overlay.py -->
-    <Copy SourceFiles="..\CellCountX.Py\overlay.py"
-          DestinationFolder="$(OutDir)" />
-
-    <!-- Cellpose バージョン取得スクリプト -->
-    <Copy SourceFiles="..\CellCountX.Py\get_cellpose_version.py"
-          DestinationFolder="$(OutDir)" />
-
   </Target>
 
   <!-- ============================
-       Publish 時のコピー
+       Publish 時の Python コピー（Release / ReleaseFull）
        ============================ -->
   <Target Name="CopyPythonOnPublish"
           AfterTargets="Publish"
-          Condition="'$(Configuration)' == 'Release'">
+          Condition="'$(Configuration)' == 'Release' OR '$(Configuration)' == 'ReleaseFull'">
 
     <ItemGroup>
       <ExtractedPythonFiles Include="$(PythonExtractDir)**\*" />
@@ -94,63 +80,58 @@
                             ..\CellCountX.Py\cellpose\Lib\**\__pycache__\**" />
     </ItemGroup>
 
-    <!-- 展開した Python をコピー -->
     <Copy SourceFiles="@(ExtractedPythonFiles)"
           DestinationFolder="$(PublishDir)python\%(RecursiveDir)" />
 
-    <!-- cellpose ライブラリ -->
     <Copy SourceFiles="@(PythonFiles)"
           DestinationFolder="$(PublishDir)python\%(RecursiveDir)" />
 
-    <!-- pth -->
     <Copy SourceFiles="python_embed\python312._pth.template"
           DestinationFiles="$(PublishDir)python\python312._pth" />
-
-    <!-- server.py -->
-    <Copy SourceFiles="..\CellCountX.Py\server.py"
-          DestinationFolder="$(PublishDir)" />
-
-    <!-- remove_edge_cells.py -->
-    <Copy SourceFiles="..\CellCountX.Py\remove_edge_cells.py"
-          DestinationFolder="$(PublishDir)" />
-
-    <!-- overlay.py -->
-    <Copy SourceFiles="..\CellCountX.Py\overlay.py"
-          DestinationFolder="$(PublishDir)" />
-
-    <!-- Cellpose バージョン取得スクリプト -->
-    <Copy SourceFiles="..\CellCountX.Py\get_cellpose_version.py"
-          DestinationFolder="$(PublishDir)" />
-
   </Target>
 
   <!-- ============================
-       Clean 時に以下を削除
+       server.py などは Release / ReleaseFull / ReleaseLight 全てでコピー
+       ============================ -->
+  <Target Name="CopyPythonScripts"
+          AfterTargets="Publish"
+          Condition="'$(Configuration)' == 'Release' OR '$(Configuration)' == 'ReleaseFull' OR '$(Configuration)' == 'ReleaseLight'">
+
+    <Copy SourceFiles="..\CellCountX.Py\server.py"
+          DestinationFolder="$(PublishDir)" />
+
+    <Copy SourceFiles="..\CellCountX.Py\remove_edge_cells.py"
+          DestinationFolder="$(PublishDir)" />
+
+    <Copy SourceFiles="..\CellCountX.Py\overlay.py"
+          DestinationFolder="$(PublishDir)" />
+
+    <Copy SourceFiles="..\CellCountX.Py\get_cellpose_version.py"
+          DestinationFolder="$(PublishDir)" />
+  </Target>
+
+  <!-- ============================
+       Clean（Python 削除は Release / ReleaseFull のみ）
        ============================ -->
   <Target Name="CleanCopiedPython"
           BeforeTargets="Clean"
-          Condition="'$(Configuration)' == 'Release'">
+          Condition="'$(Configuration)' == 'Release' OR '$(Configuration)' == 'ReleaseFull'">
 
-    <!-- Build 出力 -->
-    <RemoveDir Directories="$(OutDir)__pycache__" />
     <RemoveDir Directories="$(OutDir)python" />
+    <RemoveDir Directories="$(PublishDir)python" />
+
     <Delete Files="$(OutDir)server.py" />
     <Delete Files="$(OutDir)remove_edge_cells.py" />
     <Delete Files="$(OutDir)overlay.py" />
     <Delete Files="$(OutDir)get_cellpose_version.py" />
 
-    <!-- Publish 出力 -->
-    <RemoveDir Directories="$(PublishDir)__pycache__" />
-    <RemoveDir Directories="$(PublishDir)python" />
     <Delete Files="$(PublishDir)server.py" />
     <Delete Files="$(PublishDir)remove_edge_cells.py" />
     <Delete Files="$(PublishDir)overlay.py" />
     <Delete Files="$(PublishDir)get_cellpose_version.py" />
   </Target>
 
-  <!-- ============================
-       アイコン
-       ============================ -->
+  <!-- アイコン -->
   <ItemGroup>
     <Content Include="favicon_bpse.ico" />
   </ItemGroup>

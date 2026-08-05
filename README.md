@@ -228,7 +228,8 @@ CellPose が Unicode パスに対応していないため。
 python -m venv cellpose
 cellpose\Scripts\activate
 pip install cellpose
-pip install torch torchvision --index-url https://download.pytorch.org/whl/cu126
+pip uninstall torch
+pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu126
 pip install packaging
 ```
 
