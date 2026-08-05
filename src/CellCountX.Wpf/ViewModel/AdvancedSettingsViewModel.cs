@@ -128,7 +128,7 @@ public class AdvancedSettingsViewModel : INotifyPropertyChanged
     {
         var dlg = new OpenFileDialog()
         {
-            Filter = "Cellpose Model (*.npy)|*.npy|すべてのファイル (*.*)|*.*",
+            Filter = "Cellpose Model (拡張子なし)|*|すべてのファイル (*.*)|*.*",
             Title = "Cellpose モデルファイルを選択"
         };
         if (CellposeModelPath != null)
