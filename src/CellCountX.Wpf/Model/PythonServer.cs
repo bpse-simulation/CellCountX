@@ -162,15 +162,15 @@ public class PythonServer
     }
 
     // ---------------------------------------------------------
-    // Cellpose バージョン取得
+    // Cellpose バージョンおよび GPU 利用可能性の取得
     // ---------------------------------------------------------
-    public string? GetCellposeVersion()
+    public (string? cellposeVersion, bool? gpuAvailable) GetCellposeVersion()
     {
         if (string.IsNullOrEmpty(_pythonExe) || string.IsNullOrEmpty(_versionScript))
-            return null;
+            return (null, null);
 
         if (!File.Exists(_versionScript))
-            return null;
+            return (null, null);
 
         var psi = new ProcessStartInfo
         {
@@ -189,7 +189,7 @@ public class PythonServer
         {
             using var p = Process.Start(psi);
             if (p == null)
-                return null;
+                return (null, null);
 
             string output = p.StandardOutput.ReadToEnd().Trim();
             string error = p.StandardError.ReadToEnd().Trim();
@@ -197,14 +197,18 @@ public class PythonServer
             p.WaitForExit(3000);
 
             if (!string.IsNullOrEmpty(error))
-                return null;
+                return (null, null);
 
             var json = System.Text.Json.JsonDocument.Parse(output);
-            return json.RootElement.GetProperty("cellpose_version").GetString();
+            string? ver = json.RootElement.GetProperty("cellpose_version").GetString();
+            bool gpu = json.RootElement.GetProperty("gpu_available").GetBoolean();
+            //string? gpu_backend = json.RootElement.GetProperty("gpu_backend").GetString();
+
+            return (ver, gpu);
         }
         catch
         {
-            return null;
+            return (null, null);
         }
     }
 
@@ -320,20 +324,20 @@ public class PythonServer
 
         return PythonServerResult.Success(outStr);
     }
-}
 
-// ---------------------------------------------------------
-// PythonServer の戻り値（成功/失敗）
-// ---------------------------------------------------------
-public class PythonServerResult
-{
-    public bool IsError { get; set; }
-    public string ErrorMessage { get; set; } = "";
-    public string Output { get; set; } = "";
+    // ---------------------------------------------------------
+    // PythonServer の戻り値（成功/失敗）
+    // ---------------------------------------------------------
+    public class PythonServerResult
+    {
+        public bool IsError { get; set; }
+        public string ErrorMessage { get; set; } = "";
+        public string Output { get; set; } = "";
 
-    public static PythonServerResult Success(string output)
-        => new() { IsError = false, Output = output };
+        public static PythonServerResult Success(string output)
+            => new() { IsError = false, Output = output };
 
-    public static PythonServerResult Error(string msg)
-        => new() { IsError = true, ErrorMessage = msg };
+        public static PythonServerResult Error(string msg)
+            => new() { IsError = true, ErrorMessage = msg };
+    }
 }

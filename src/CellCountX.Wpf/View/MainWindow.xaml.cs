@@ -43,7 +43,6 @@ public partial class MainWindow : Window
         {
             // 設定保存
             Properties.Settings.Default.UseGpu = vm.UseGpu;
-            Properties.Settings.Default.TimeoutSeconds = vm.TimeoutSeconds;
             Properties.Settings.Default.Save();
 
             // 実行中ならキャンセルして Python プロセスを Kill
