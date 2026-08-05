@@ -6,43 +6,82 @@
         xmlns:viewmodel="clr-namespace:CellCountX.Wpf.ViewModel"
         d:DataContext="{d:DesignInstance Type=viewmodel:AdvancedSettingsViewModel}"
         mc:Ignorable="d"
-        Title="詳細設定" Height="300" Width="420"
+        Title="詳細設定" Height="500" Width="500"
         WindowStartupLocation="CenterOwner">
 
     <Grid Margin="20">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>  <!-- Timeout -->
             <RowDefinition Height="20"/>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>  <!-- Model -->
+            <RowDefinition Height="20"/>
+            <RowDefinition Height="Auto"/>  <!-- Edge Filter -->
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
         <!-- タイムアウト設定 -->
         <StackPanel Orientation="Vertical" Grid.Row="0">
             <TextBlock Text="タイムアウト（秒）" Margin="0 0 0 5"/>
-            <TextBox Text="{Binding TimeoutSeconds, UpdateSourceTrigger=PropertyChanged}"
-                     Width="100"/>
-            <TextBlock Text="※ 0 または空欄の場合は CPU/GPU に応じた自動設定になります"
+            <TextBox Text="{Binding TimeoutSeconds, UpdateSourceTrigger=PropertyChanged}" Width="60" HorizontalAlignment="Left"/>
+            <TextBlock Text="※ 0 の場合は CPU/GPU に応じた自動設定になります"
                        FontSize="11" Foreground="Gray" Margin="0 5 0 0"/>
         </StackPanel>
 
         <!-- Cellpose モデル設定 -->
-        <StackPanel Orientation="Vertical" Grid.Row="2" Margin="0 10 0 0">
+        <StackPanel Orientation="Vertical" Grid.Row="2">
             <TextBlock Text="Cellpose モデル (.npy)" Margin="0 0 0 5"/>
-            <StackPanel Orientation="Horizontal">
-                <TextBox Text="{Binding CellposeModelPath, UpdateSourceTrigger=PropertyChanged}"
-                         Width="260"/>
-                <Button Content="参照..." Width="70" Margin="10 0 0 0"
-                        Command="{Binding BrowseModelCommand}"/>
-            </StackPanel>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBox Text="{Binding CellposeModelPath}" Grid.Column="0" Margin="0 0 10 0"/>
+                <Button Content="参照..." Grid.Column="1" Width="70" Command="{Binding BrowseModelCommand}"/>
+            </Grid>
             <TextBlock Text="※ 空欄の場合は Cellpose のデフォルトモデル（cpsam_v2）を使用します"
                        FontSize="11" Foreground="Gray" Margin="0 5 0 0"/>
         </StackPanel>
 
+        <!-- 境界フィルタ -->
+        <GroupBox Grid.Row="4" Header="境界細胞除去" Margin="0,3,0,3">
+            <StackPanel Margin="10">
+
+                <CheckBox Content="境界細胞除去を有効にする"
+                          IsChecked="{Binding UseEdgeFilter}" />
+
+                <Separator Margin="5"/>
+
+                <TextBlock Text="除去する方向：" Margin="0,5,0,5"/>
+
+                <StackPanel Orientation="Vertical" Margin="10,0,0,0">
+                    <CheckBox Content="上端（Top）"
+                              IsChecked="{Binding UseEdgeTop}" />
+                    <CheckBox Content="下端（Bottom）"
+                              IsChecked="{Binding UseEdgeBottom}" />
+                    <CheckBox Content="左端（Left）"
+                              IsChecked="{Binding UseEdgeLeft}" />
+                    <CheckBox Content="右端（Right）"
+                              IsChecked="{Binding UseEdgeRight}" />
+                </StackPanel>
+
+                <Separator Margin="5"/>
+
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="マージン（px）：" VerticalAlignment="Center"/>
+                    <TextBox Width="60" Margin="10,0,0,0" Text="{Binding EdgeMargin}" />
+                </StackPanel>
+
+                <TextBlock Text="※ Cellpose の境界は端から 1〜2px 内側に生成されるため、初期値は 2px を推奨します"
+                           FontSize="11" Foreground="Gray" Margin="0,5,0,0"/>
+            </StackPanel>
+        </GroupBox>
+
         <!-- OK / Cancel -->
-        <StackPanel Orientation="Horizontal" Grid.Row="3" HorizontalAlignment="Right" Margin="0 20 0 0">
+        <StackPanel Grid.Row="5" VerticalAlignment="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0 20 0 0">
             <Button Content="OK" Width="80" Margin="0 0 10 0" Click="Ok_Click"/>
             <Button Content="キャンセル" Width="80" Click="Cancel_Click"/>
         </StackPanel>
+
     </Grid>
 </Window>

@@ -2,6 +2,7 @@
 using CellCountX.Wpf.Model;
 using System.ComponentModel;
 using System.IO;
+using System.Windows;
 using System.Windows.Input;
 
 namespace CellCountX.Wpf.ViewModel;
@@ -25,6 +26,9 @@ public class MainViewModel : INotifyPropertyChanged
         set { _outputFolder = value; OnPropertyChanged(nameof(OutputFolder)); }
     }
 
+    // ---------------------------------------------------------
+    // GPU
+    // ---------------------------------------------------------
     private bool _useGpu;
     public bool UseGpu
     {
@@ -35,6 +39,8 @@ public class MainViewModel : INotifyPropertyChanged
 
             var oldUseGpu = _useGpu;
             _useGpu = value;
+            Properties.Settings.Default.UseGpu = _useGpu;
+            Properties.Settings.Default.Save();
             OnPropertyChanged(nameof(UseGpu));
 
             // 以前が自動タイムアウト値だった場合のみ、新しい自動値に追従させる
@@ -45,6 +51,23 @@ public class MainViewModel : INotifyPropertyChanged
         }
     }
 
+    // ---------------------------------------------------------
+    // GPU 利用可能かどうか（Python 環境チェックで設定）
+    // ---------------------------------------------------------
+    private bool _gpuAvailable;
+    public bool GpuAvailable
+    {
+        get => _gpuAvailable;
+        set
+        {
+            _gpuAvailable = value;
+            OnPropertyChanged(nameof(GpuAvailable));
+        }
+    }
+
+    // ---------------------------------------------------------
+    // タイムアウト
+    // ---------------------------------------------------------
     private int _timeoutSeconds = 60;
     public int TimeoutSeconds
     {
@@ -85,73 +108,20 @@ public class MainViewModel : INotifyPropertyChanged
     }
 
     // ---------------------------------------------------------
-    // 境界細胞除去（4方向 + マージン）
+    // Python 環境チェック
     // ---------------------------------------------------------
-    public bool UseEdgeFilter
+    private bool _isCheckingPython;
+    public bool IsCheckingPython
     {
-        get => Properties.Settings.Default.UseEdgeFilter;
+        get => _isCheckingPython;
         set
         {
-            Properties.Settings.Default.UseEdgeFilter = value;
-            Properties.Settings.Default.Save();
-            OnPropertyChanged(nameof(UseEdgeFilter));
+            _isCheckingPython = value;
+            OnPropertyChanged(nameof(IsCheckingPython));
+            StartBatchCommand.RaiseCanExecuteChanged();
         }
     }
 
-    public bool UseEdgeTop
-    {
-        get => Properties.Settings.Default.UseEdgeTop;
-        set
-        {
-            Properties.Settings.Default.UseEdgeTop = value;
-            Properties.Settings.Default.Save();
-            OnPropertyChanged(nameof(UseEdgeTop));
-        }
-    }
-
-    public bool UseEdgeBottom
-    {
-        get => Properties.Settings.Default.UseEdgeBottom;
-        set
-        {
-            Properties.Settings.Default.UseEdgeBottom = value;
-            Properties.Settings.Default.Save();
-            OnPropertyChanged(nameof(UseEdgeBottom));
-        }
-    }
-
-    public bool UseEdgeLeft
-    {
-        get => Properties.Settings.Default.UseEdgeLeft;
-        set
-        {
-            Properties.Settings.Default.UseEdgeLeft = value;
-            Properties.Settings.Default.Save();
-            OnPropertyChanged(nameof(UseEdgeLeft));
-        }
-    }
-
-    public bool UseEdgeRight
-    {
-        get => Properties.Settings.Default.UseEdgeRight;
-        set
-        {
-            Properties.Settings.Default.UseEdgeRight = value;
-            Properties.Settings.Default.Save();
-            OnPropertyChanged(nameof(UseEdgeRight));
-        }
-    }
-
-    public int EdgeMargin
-    {
-        get => Properties.Settings.Default.EdgeMargin;
-        set
-        {
-            Properties.Settings.Default.EdgeMargin = value;
-            Properties.Settings.Default.Save();
-            OnPropertyChanged(nameof(EdgeMargin));
-        }
-    }
 
     // ---------------------------------------------------------
     // コマンド
@@ -172,16 +142,14 @@ public class MainViewModel : INotifyPropertyChanged
 
     public MainViewModel()
     {
-        // 設定読み込み
+        // 詳細設定から読み込む
         UseGpu = Properties.Settings.Default.UseGpu;
 
         // 詳細設定で TimeoutSeconds が設定されていればそれを使う。0 以下なら自動値。
         var savedTimeout = Properties.Settings.Default.TimeoutSeconds;
         TimeoutSeconds = savedTimeout > 0 ? savedTimeout : GetAutoTimeout(UseGpu);
 
-        // ---------------------------------------------------------
         // PythonServer → PythonClient → BatchProcessor
-        // ---------------------------------------------------------
         _pythonServer = new PythonServer();
         var pythonClient = new PythonClient(_pythonServer);
         _processor = new BatchProcessor(pythonClient);
@@ -194,23 +162,13 @@ public class MainViewModel : INotifyPropertyChanged
             AppendLog("処理が完了しました。");
         };
 
-        // ---------------------------------------------------------
-        // Python チェックは非同期で実行（UI を止めない）
-        // ---------------------------------------------------------
-        Task.Run(() =>
-        {
-            var log = _pythonServer.CheckPythonEnvironment();
-            AppendLog(log);
-
-            var ver = _pythonServer.GetCellposeVersion();
-            if (!string.IsNullOrEmpty(ver))
-                AppendLog($"Cellpose バージョン: {ver}");
-        });
-
         // コマンド
         BrowseFolderCommand = new RelayCommand(_ => BrowseFolder());
         BrowseOutputFolderCommand = new RelayCommand(_ => BrowseOutputFolder());
-        StartBatchCommand = new RelayCommand(async _ => await StartBatchAsync(), _ => !IsRunning);
+        StartBatchCommand = new RelayCommand(
+            async _ => await StartBatchAsync(),
+            _ => !IsRunning && !IsCheckingPython
+        );
         CancelBatchCommand = new RelayCommand(_ => CancelBatch(), _ => IsRunning);
     }
 
@@ -257,22 +215,26 @@ public class MainViewModel : INotifyPropertyChanged
         IsRunning = true;
         _cts = new CancellationTokenSource();
 
+        UseGpu = Properties.Settings.Default.UseGpu; // ユーザー設定は保持
+
         // 非接着細胞除去パラメータを含めて Python に渡す
         var req = new BatchRequest
         {
             InputFolder = InputFolder,
             OutputFolder = OutputFolder,
-            UseGpu = UseGpu,
+            UseGpu = GpuAvailable && UseGpu,  // 実際に使うかどうかはここで決める
             TimeoutSeconds = TimeoutSeconds,
-            UseEdgeFilter = UseEdgeFilter,
-            UseEdgeTop = UseEdgeTop,
-            UseEdgeBottom = UseEdgeBottom,
-            UseEdgeLeft = UseEdgeLeft,
-            UseEdgeRight = UseEdgeRight,
-            EdgeMargin = EdgeMargin,
 
             // Cellpose モデルパスを Python に渡す
-            CellposeModelPath = Properties.Settings.Default.CellposeModelPath
+            CellposeModelPath = Properties.Settings.Default.CellposeModelPath,
+
+            // 境界細胞除去
+            UseEdgeFilter = Properties.Settings.Default.UseEdgeFilter,
+            UseEdgeTop = Properties.Settings.Default.UseEdgeTop,
+            UseEdgeBottom = Properties.Settings.Default.UseEdgeBottom,
+            UseEdgeLeft = Properties.Settings.Default.UseEdgeLeft,
+            UseEdgeRight = Properties.Settings.Default.UseEdgeRight,
+            EdgeMargin = Properties.Settings.Default.EdgeMargin
         };
 
         await _processor.StartAsync(req, _cts.Token);
@@ -291,18 +253,53 @@ public class MainViewModel : INotifyPropertyChanged
     }
 
     // ---------------------------------------------------------
+    // Python チェックは非同期で実行（UI を止めない）
+    // ---------------------------------------------------------
+    private void RunPythonEnvironmentCheck()
+    {
+        IsCheckingPython = true;
+        AppendLog("Python 環境チェック中…");
+
+        Task.Run(() =>
+        {
+            var log = _pythonServer.CheckPythonEnvironment();
+            var (ver, gpu) = _pythonServer.GetCellposeVersion();
+
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                AppendLog(log);
+
+                if (!string.IsNullOrEmpty(ver))
+                    AppendLog($"Cellpose バージョン: {ver}");
+
+                GpuAvailable = gpu ?? false;
+
+                if (!(gpu ?? false))
+                {
+                    UseGpu = false;
+                    AppendLog("GPU が利用できないため CPU に切り替えます。");
+                }
+
+                AppendLog("Python 環境チェック完了");
+                IsCheckingPython = false;
+            });
+        });
+    }
+
+    // ---------------------------------------------------------
     // ログ追加
     // ---------------------------------------------------------
-    public void AppendLog(string message)
+    private void AppendLog(string message)
     {
         LogText += $"{DateTime.Now:HH:mm:ss}  {message}\n";
     }
 
     // ---------------------------------------------------------
-    // 起動ログ
+    // Window Loaded 時に呼び出す
     // ---------------------------------------------------------
-    public void AppendStartupLog()
+    public void OnWindowLoaded()
     {
         AppendLog("CellCountX 起動");
+        RunPythonEnvironmentCheck();
     }
 }

@@ -83,7 +83,7 @@ jobs:
       # Publish（フル版）
       # ---------------------------------------------
       - name: Publish Full
-        run: dotnet publish src/CellCountX.Wpf/CellCountX.Wpf.csproj -c Release -o publish_full
+        run: dotnet publish src/CellCountX.Wpf/CellCountX.Wpf.csproj -c ReleaseFull -o publish_full
 
       # ---------------------------------------------
       # python runtime を publish_full に含める
@@ -96,7 +96,7 @@ jobs:
       # Publish（軽量版）
       # ---------------------------------------------
       - name: Publish Light
-        run: dotnet publish src/CellCountX.Wpf/CellCountX.Wpf.csproj -c Release -o publish_light
+        run: dotnet publish src/CellCountX.Wpf/CellCountX.Wpf.csproj -c ReleaseLight -o publish_light
 
       # ---------------------------------------------
       # Release ノート自動生成
