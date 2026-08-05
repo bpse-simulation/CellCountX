@@ -14,12 +14,20 @@ public class PythonServer
     private Process? _process;
 
     // ---------------------------------------------------------
+    // Python 環境チェックの結果を表すクラス
+    // ---------------------------------------------------------
+    public class PythonEnvCheckResult
+    {
+        public bool IsAvailable { get; set; }
+        public string Message { get; set; } = "";
+    }
+
+    // ---------------------------------------------------------
     // 非同期で呼び出す Python 環境チェック
     // ---------------------------------------------------------
-    public string CheckPythonEnvironment()
+    public PythonEnvCheckResult CheckPythonEnvironment()
     {
 #if DEBUG
-        // Debug：開発用 Python を使う
         string baseDir = AppContext.BaseDirectory;
         string devRoot = Path.GetFullPath(Path.Combine(baseDir, @"..\..\..\.."));
         string devPython = Path.Combine(devRoot, "CellCountX.Py", "cellpose", "Scripts", "python.exe");
@@ -32,22 +40,34 @@ public class PythonServer
             _serverScript = devServer;
             _versionScript = devVersion;
             _workingDir = Path.Combine(devRoot, "CellCountX.Py");
-            return "Debug：開発用 Python を使用します。";
+
+            return new PythonEnvCheckResult
+            {
+                IsAvailable = true,
+                Message = "Debug：開発用 Python を使用します。"
+            };
         }
 
-        return "Debug モード：開発用 Python が見つかりません。";
+        return new PythonEnvCheckResult
+        {
+            IsAvailable = false,
+            Message = "Debug モード：開発用 Python が見つかりません。"
+        };
 #else
-        // Release：conda → PATH → 同梱
         if (TryFindCondaCellpose())
-            return "Conda の CellPose 環境を使用します。";
+            return new PythonEnvCheckResult { IsAvailable = true, Message = "Conda の CellPose 環境を使用します。" };
 
         if (TryFindExistingPython())
-            return "既存の Python 環境を使用します。";
+            return new PythonEnvCheckResult { IsAvailable = true, Message = "既存の Python 環境を使用します。" };
 
         if (TryFindBundledPython())
-            return "同梱 Python を使用します。";
+            return new PythonEnvCheckResult { IsAvailable = true, Message = "同梱 Python を使用します。" };
 
-        return "CellPose を実行できる Python が見つかりません。Python をセットアップしてください。";
+        return new PythonEnvCheckResult
+        {
+            IsAvailable = false,
+            Message = "CellPose を実行できる Python が見つかりません。Python をセットアップしてください。"
+        };
 #endif
     }
 

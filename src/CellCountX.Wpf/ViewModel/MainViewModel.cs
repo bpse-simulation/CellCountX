@@ -122,6 +122,20 @@ public class MainViewModel : INotifyPropertyChanged
         }
     }
 
+    // ---------------------------------------------------------
+    // Python 利用可能かどうか（Python 環境チェックで設定）
+    // ---------------------------------------------------------
+    private bool _isPythonAvailable;
+    public bool IsPythonAvailable
+    {
+        get => _isPythonAvailable;
+        set
+        {
+            _isPythonAvailable = value;
+            OnPropertyChanged(nameof(IsPythonAvailable));
+            StartBatchCommand.RaiseCanExecuteChanged();
+        }
+    }
 
     // ---------------------------------------------------------
     // コマンド
@@ -167,7 +181,7 @@ public class MainViewModel : INotifyPropertyChanged
         BrowseOutputFolderCommand = new RelayCommand(_ => BrowseOutputFolder());
         StartBatchCommand = new RelayCommand(
             async _ => await StartBatchAsync(),
-            _ => !IsRunning && !IsCheckingPython
+            _ => !IsRunning && !IsCheckingPython && IsPythonAvailable
         );
         CancelBatchCommand = new RelayCommand(_ => CancelBatch(), _ => IsRunning);
     }
@@ -262,16 +276,36 @@ public class MainViewModel : INotifyPropertyChanged
 
         Task.Run(() =>
         {
-            var log = _pythonServer.CheckPythonEnvironment();
-            var (ver, gpu) = _pythonServer.GetCellposeVersion();
+            // Python チェック
+            var result = _pythonServer.CheckPythonEnvironment();
 
+            // Python が無い場合は GPU チェックをスキップ
+            string? ver = null;
+            bool? gpu = null;
+
+            if (result.IsAvailable)
+            {
+                (ver, gpu) = _pythonServer.GetCellposeVersion();
+            }
+
+            // UI スレッドにまとめて戻す
             Application.Current.Dispatcher.Invoke(() =>
             {
-                AppendLog(log);
+                AppendLog(result.Message);
+                IsPythonAvailable = result.IsAvailable;
 
+                if (!IsPythonAvailable)
+                {
+                    AppendLog("Python 環境が存在しないため開始できません。");
+                    IsCheckingPython = false;
+                    return;
+                }
+
+                // Cellpose バージョン
                 if (!string.IsNullOrEmpty(ver))
                     AppendLog($"Cellpose バージョン: {ver}");
 
+                // GPU 判定
                 GpuAvailable = gpu ?? false;
 
                 if (!(gpu ?? false))

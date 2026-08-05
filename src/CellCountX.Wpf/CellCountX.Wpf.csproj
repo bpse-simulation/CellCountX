@@ -7,6 +7,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
     <ApplicationIcon>favicon_bpse.ico</ApplicationIcon>
+
+    <!-- 実行ファイル名を変更 -->
+    <AssemblyName>CellCountX</AssemblyName>
   </PropertyGroup>
 
   <!-- ビルド構成 -->
