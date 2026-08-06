@@ -21,4 +21,9 @@ public class BatchRequest
     public bool UseEdgeLeft { get; set; }
     public bool UseEdgeRight { get; set; }
     public int EdgeMargin { get; set; }
+
+    // 出力オプション
+    public bool SaveOverlay { get; set; }
+    public bool SaveMasks { get; set; }
+    public bool SaveSegNpy { get; set; }
 }

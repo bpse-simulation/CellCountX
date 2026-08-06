@@ -19,9 +19,9 @@ CellCountX には **2 種類の配布版**があります：
 ### 🟦 軽量版（Python 非同梱版）
 
 - Python は同梱されません
-- ユーザーが自分の Python（conda / venv / PATH）を用意して使用
+- ユーザーが自分の Python（conda / PATH 上の python）を用意して使用
 - CellPose が import できる Python を自動検出
-- サイズが小さく、研究室環境での配布に向く
+- サイズが非常に小さい（約 540KB）
 
 ---
 
@@ -33,54 +33,99 @@ CellCountX には **2 種類の配布版**があります：
 - 軽量版：ユーザーの Python 環境を自動検出
     - conda の `cellpose` 環境
     - PATH 上の Python
-    - 同梱 Python（フル版のみ）
-- server.py に JSON を渡して推論を実行
-- GPU が利用可能な環境では CUDA を使用（任意）
+    - フル版の同梱 Python
 
-### 🎨 輪郭オーバーレイ画像の自動生成
+### 🔍 Python 環境チェック（自動判定）
+
+起動時に PythonServer が以下を自動判定します：
+
+- Python が存在するか
+- CellPose が import 可能か
+- GPU が利用可能か（CUDA / ROCm / DirectML / MPS）
+- CellPose のバージョン
+
+Python が存在しない場合は「開始」ボタンが無効化されます。
+
+---
+
+## 🎨 輪郭オーバーレイ画像の自動生成
 
 CellPose のマスクをもとに、元画像へ輪郭を重ねた画像を生成します。
 
 - **採用された細胞 → 緑の輪郭**
-- **画像端で途切れた細胞（除外） → 赤の輪郭**
+- **画像端で除外された細胞 → 赤の輪郭**
 
 生成されるファイル：
 
 - `{base}_overlay.png`
-- `{base}_cp_masks.tif`
+- `{base}_cp_masks.png`
+- `{base}_seg.npy`
 
-### 🧹 画像端の細胞除去（境界除去）
+---
+
+## 🧹 画像端の細胞除去（境界除去）
 
 CellPose は画像端にある細胞を「途切れた状態」で検出することがあります。
 CellCountX では以下の設定により **画像端の細胞を自動除去**できます。
 
 - 上端 / 下端 / 左端 / 右端
-- マージン（px）設定
-  - 初期値は 2px を推奨
+- マージン（px）設定（初期値 2px 推奨）
 
 除去された細胞は **赤色の輪郭**で描画されます。
 
-### ⚙️ WPF (MVVM) アーキテクチャ
+---
+
+## 🧩 出力オプション（保存するファイルを選択可能）
+
+詳細設定から以下の保存有無を選択できます：
+
+| 種類 | ファイル名 | 説明 |
+| --- | --- | --- |
+| マスク画像 | `{base}_cp_masks.png` | CellPose 標準のマスク画像 |
+| seg.npy | `{base}_seg.npy` | flows/masks/styles を含む CellPose 標準形式 |
+| オーバーレイ画像 | `{base}_overlay.png` | 緑＝採用 / 赤＝除外 |
+
+※ seg.npy は CellPose の `masks_flows_to_seg()` により **完全互換形式**で保存されます。
+
+---
+
+## ⚙️ WPF (MVVM) アーキテクチャ
 
 - UI とロジックを分離
 - 非同期処理 + キャンセル対応
 - PythonServer → PythonClient → BatchProcessor の三層構造
+- 「Python チェック中」「処理中」などの状態に応じて UI が自動制御
 
-### 📊 バッチ処理 + CSV 出力
+---
+
+## 📊 バッチ処理 + CSV 出力
 
 - 指定フォルダ内の画像を一括処理
 - 進捗バー表示
 - CSV 出力（ファイル名・CellPose カウント・境界除去後のカウント）
 
-### 🧹 タイムアウト + 安全な Kill
+CSV 出力例：
+
+| FileName | CellCount | FilteredCount |
+| --- | --- | --- |
+| image001.png | 123 | 120 |
+| image002.png | 98 | 95 |
+
+---
+
+## 🧹 タイムアウト + 安全な Kill
 
 - Python が応答しない場合はプロセスを強制終了
 - 次の画像へ自動的に進む
-- タイムアウトは **詳細設定**から変更可能
+- タイムアウトは詳細設定から変更可能
+- GPU/CPU に応じて自動タイムアウト値を設定
 
-### 🔤 全角パス禁止
+---
 
-CellPose の制約により、フォルダ名・ファイル名に全角文字が含まれる場合は中断します。
+## 🔤 全角パス禁止
+
+CellPose が Unicode パスに対応していないため、
+フォルダ名・ファイル名に全角文字が含まれる場合は中断します。
 
 ---
 
@@ -88,7 +133,7 @@ CellPose の制約により、フォルダ名・ファイル名に全角文字�
 
 ### WPF プロジェクト（CellCountX.Wpf）
 
-```
+```bash
 CellCountX.Wpf/
 ├── View/
 ├── ViewModel/
@@ -102,10 +147,10 @@ CellCountX.Wpf/
 
 ### Python バックエンド（開発用）
 
-```
+```bash
 CellCountX.Py/
 ├── server.py
-├── get_cellpose_version.py
+├── get_cellpose_info.py
 ├── remove_edge_cells.py
 ├── overlay.py
 └── cellpose/
@@ -113,11 +158,11 @@ CellCountX.Py/
 
 ### 配布時の構成（フル版）
 
-```
+```bash
 CellCountX/
 ├── CellCountX.exe
 ├── server.py
-├── get_cellpose_version.py
+├── get_cellpose_info.py
 ├── remove_edge_cells.py
 ├── overlay.py
 └── python/
@@ -130,16 +175,14 @@ CellCountX/
 
 ### 配布時の構成（軽量版）
 
-```
+```bash
 CellCountX/
 ├── CellCountX.exe
 ├── server.py
-├── get_cellpose_version.py
+├── get_cellpose_info.py
 ├── remove_edge_cells.py
 └── overlay.py
 ```
-
-※ Python は同梱されません。
 
 ---
 
@@ -147,19 +190,24 @@ CellCountX/
 
 1. **画像フォルダを選択**
 2. **出力フォルダを選択**
-3. **GPU 使用の有無を選択**
-4. **境界細胞除去の設定（任意）**
+3. **詳細設定を開く**
+    - GPU 使用の有無
+    - 境界細胞除去（上・下・左・右・マージン）
+    - 保存オプション（マスク / seg.npy / オーバーレイ）
+    - タイムアウト設定
+4. **必要な設定を行ったら詳細設定を閉じる**
 5. **「開始」ボタンでバッチ処理開始**
-6. **「キャンセル」で即時中断**
+6. **「キャンセル」ボタンで即時中断**
 
 ---
 
-## 🖼️ 出力される画像
+## 🖼️ 出力されるファイル一覧
 
 | 種類 | ファイル名 | 内容 |
-|------|------------|------|
-| マスク画像 | `{base}_cp_masks.tif` | CellPose のラベルマスク |
-| 輪郭オーバーレイ画像 | `{base}_overlay.png` | 緑＝採用 / 赤＝除外 |
+| --- | --- | --- |
+| マスク画像 | `{base}_cp_masks.png` | CellPose 標準のマスク画像 |
+| seg.npy | `{base}_seg.npy` | flows/masks/styles を含む CellPose 標準形式 |
+| オーバーレイ画像 | `{base}_overlay.png` | 緑＝採用 / 赤＝除外 |
 
 ---
 
@@ -173,14 +221,13 @@ CellPose が Unicode パスに対応していないため。
 
 #### フル版
 
-- 配布版は **python/ フォルダ内の Embeddable Python** を使用
-- 開発時は `CellCountX.Py/` の venv を自動検出して使用
+- 配布版は `python/` 内の Embeddable Python を使用
+- GPU が利用可能なら CUDA を自動判定
 
 #### 軽量版
 
 - conda の cellpose 環境
 - PATH 上の Python
-- venv
 
 などを自動検出して使用します。
 
@@ -191,15 +238,17 @@ CellPose が Unicode パスに対応していないため。
 ### PythonServer（C#）
 
 - Python を起動して server.py を実行
+- Python 環境の有無・CellPose の import 可否・GPU 利用可否を判定
 - server.py に JSON を渡して推論
 - タイムアウト時はプロセスを Kill
 
 ### server.py（Python）
 
 - CellPose 推論
-- 画像端の細胞除去（境界除去）
-- マスク画像保存
-- 輪郭オーバーレイ画像生成（緑＝採用 / 赤＝除外）
+- 画像端の細胞除去
+- マスク画像保存（CellPose 標準形式）
+- seg.npy 保存（CellPose 標準形式）
+- 輪郭オーバーレイ画像生成
 - JSON で結果を返す
 
 ### BatchProcessor
@@ -214,7 +263,7 @@ CellPose が Unicode パスに対応していないため。
 ## 📄 CSV 出力形式
 
 | FileName | CellCount | FilteredCount |
-|----------|-----------|---------------|
+| --- | --- | --- |
 | image001.png | 123 | 120 |
 | image002.png | 98 | 95 |
 
@@ -255,9 +304,8 @@ GitHub Actions は 2 種類の配布版を生成します：
 
 ## 📦 分割 ZIP の結合方法
 
-GitHub の 2GB 制限を回避するため、CellCountX は**複数の分割 ZIP（.zip.001, .zip.002, ...）として配布**されています。
-
-以下の手順で **1つの ZIP に結合 → 展開** してください。
+GitHub の 2GB 制限を回避するため、CellCountX は
+**複数の分割 ZIP（.zip.001, .zip.002, ...）として配布**されています。
 
 ### 1. すべての分割 ZIP をダウンロード
 
@@ -269,7 +317,8 @@ CellCountX-vX.Y.Z.zip.002
 ```
 
 > ⚠️ **すべて同じフォルダに保存してください。**
-> 1つでも欠けていると結合できません。
+1つでも欠けていると結合できません。
+>
 
 ### 2. ZIP を結合して展開
 
@@ -280,29 +329,27 @@ CellCountX-vX.Y.Z.zip.002
 3. `.zip.002` 以降も自動的に読み込まれます
 
 > 最も簡単で確実な方法です。
+> 
 
 #### 方法 B（上級者向け）：コマンドラインで結合
 
 > ⚠️ **PowerShell では動作しません。必ず cmd.exe を使用してください。**
-> PowerShell は `copy /b` を内部コマンドとして扱わないためエラーになります。
-
+PowerShell は `copy /b` を内部コマンドとして扱わないためエラーになります。
+> 
 1. Windows の検索で **cmd** と入力し「コマンドプロンプト」を開く
 2. 分割 ZIP があるフォルダへ移動
 3. 以下を実行：
-
-    ```cmd
+    
+    ```bash
     copy /b CellCountX-vX.Y.Z.zip.001 + CellCountX-vX.Y.Z.zip.002 + CellCountX-vX.Y.Z.zip.003 CellCountX.zip
     ```
-
+    
 4. 結合された `CellCountX.zip` を展開：
-
-    ```cmd
+    
+    ```bash
     7z x CellCountX.zip
     ```
-
-### 3. CellCountX.Wpf.exe を実行
-
-展開されたフォルダ内の `CellCountX.Wpf.exe` を起動してください。
+    
 
 ---
 

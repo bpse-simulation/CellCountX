@@ -23,7 +23,7 @@
     <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="get_cellpose_version.py" />
+    <Compile Include="get_cellpose_info.py" />
     <Compile Include="overlay.py" />
     <Compile Include="remove_edge_cells.py" />
     <Compile Include="server.py" />

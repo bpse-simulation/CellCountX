@@ -6,7 +6,7 @@
         xmlns:viewmodel="clr-namespace:CellCountX.Wpf.ViewModel"
         d:DataContext="{d:DesignInstance Type=viewmodel:AdvancedSettingsViewModel}"
         mc:Ignorable="d"
-        Title="詳細設定" Height="500" Width="500"
+        Title="詳細設定" Height="600" Width="500"
         WindowStartupLocation="CenterOwner">
 
     <Grid Margin="20">
@@ -16,6 +16,8 @@
             <RowDefinition Height="Auto"/>  <!-- Model -->
             <RowDefinition Height="20"/>
             <RowDefinition Height="Auto"/>  <!-- Edge Filter -->
+            <RowDefinition Height="10"/>
+            <RowDefinition Height="Auto"/>  <!-- Save Options -->
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
@@ -77,8 +79,20 @@
             </StackPanel>
         </GroupBox>
 
+        <!-- Save オプション -->
+        <GroupBox Grid.Row="6" Header="出力オプション" Margin="0,3,0,3">
+            <StackPanel Margin="10">
+                <CheckBox Content="オーバーレイ画像を保存"
+                          IsChecked="{Binding SaveOverlay}" />
+                <CheckBox Content="マスク画像を保存"
+                          IsChecked="{Binding SaveMasks}" />
+                <CheckBox Content="seg.npy を保存"
+                          IsChecked="{Binding SaveSegNpy}" />
+            </StackPanel>
+        </GroupBox>
+
         <!-- OK / Cancel -->
-        <StackPanel Grid.Row="5" VerticalAlignment="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0 20 0 0">
+        <StackPanel Grid.Row="7" VerticalAlignment="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0 20 0 0">
             <Button Content="OK" Width="80" Margin="0 0 10 0" Click="Ok_Click"/>
             <Button Content="キャンセル" Width="80" Click="Cancel_Click"/>
         </StackPanel>

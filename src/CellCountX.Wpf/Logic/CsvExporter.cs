@@ -6,11 +6,11 @@ namespace CellCountX.Wpf.Logic;
 
 public class CsvExporter
 {
-    public string Save(List<CellResult> results, string outputFolder)
+    public string Save(List<CellResult> results, string outputFolder, string fileName = "cells.csv")
     {
         Directory.CreateDirectory(outputFolder);
 
-        string mainCsv = Path.Combine(outputFolder, "cells.csv");
+        string mainCsv = Path.Combine(outputFolder, fileName);
 
         var lines = new List<string>
         {
@@ -36,7 +36,7 @@ public class CsvExporter
             // Excel が開いている → 別名保存
             string fallback = Path.Combine(
                 outputFolder,
-                $"cells_{DateTime.Now:yyyyMMdd_HHmmss}.csv"
+                Path.GetFileNameWithoutExtension(fileName) + $"_{DateTime.Now:yyyyMMdd_HHmmss}.csv"
             );
 
             File.WriteAllLines(fallback, lines, Encoding.UTF8);
