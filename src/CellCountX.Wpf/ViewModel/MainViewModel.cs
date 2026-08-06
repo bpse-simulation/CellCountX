@@ -279,13 +279,13 @@ public class MainViewModel : INotifyPropertyChanged
             // Python チェック
             var result = _pythonServer.CheckPythonEnvironment();
 
-            // Python が無い場合は GPU チェックをスキップ
             string? ver = null;
             bool? gpu = null;
 
+            // Python が見つかった場合のみ Cellpose バージョンを取得
             if (result.IsAvailable)
             {
-                (ver, gpu) = _pythonServer.GetCellposeVersion();
+                (ver, gpu) = _pythonServer.GetCellposeInfo();
             }
 
             // UI スレッドにまとめて戻す
@@ -294,6 +294,7 @@ public class MainViewModel : INotifyPropertyChanged
                 AppendLog(result.Message);
                 IsPythonAvailable = result.IsAvailable;
 
+                // Python が無い場合
                 if (!IsPythonAvailable)
                 {
                     AppendLog("Python 環境が存在しないため開始できません。");
@@ -301,9 +302,18 @@ public class MainViewModel : INotifyPropertyChanged
                     return;
                 }
 
-                // Cellpose バージョン
-                if (!string.IsNullOrEmpty(ver))
-                    AppendLog($"Cellpose バージョン: {ver}");
+                // Cellpose バージョンが取得できない → Cellpose が使えない
+                if (string.IsNullOrEmpty(ver))
+                {
+                    AppendLog("Cellpose のバージョンが取得できません。Cellpose が正しくインストールされていない可能性があります。");
+                    AppendLog("Cellpose が利用できないため開始できません。");
+                    IsPythonAvailable = false;   // Cellpose が使えないので開始不可
+                    IsCheckingPython = false;
+                    return;
+                }
+
+                // Cellpose バージョン表示
+                AppendLog($"Cellpose バージョン: {ver}");
 
                 // GPU 判定
                 GpuAvailable = gpu ?? false;

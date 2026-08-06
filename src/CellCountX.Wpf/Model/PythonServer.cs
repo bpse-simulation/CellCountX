@@ -9,7 +9,7 @@ public class PythonServer
     private string _pythonExe = "";
     private string _serverScript = "";
     private string _workingDir = "";
-    private string _versionScript = "";
+    private string _infoScript = "";
 
     private Process? _process;
 
@@ -32,13 +32,13 @@ public class PythonServer
         string devRoot = Path.GetFullPath(Path.Combine(baseDir, @"..\..\..\.."));
         string devPython = Path.Combine(devRoot, "CellCountX.Py", "cellpose", "Scripts", "python.exe");
         string devServer = Path.Combine(devRoot, "CellCountX.Py", "server.py");
-        string devVersion = Path.Combine(devRoot, "CellCountX.Py", "get_cellpose_version.py");
+        string devInfo = Path.Combine(devRoot, "CellCountX.Py", "get_cellpose_info.py");
 
-        if (File.Exists(devPython) && File.Exists(devServer))
+        if (File.Exists(devPython) && File.Exists(devServer) && File.Exists(devInfo))
         {
             _pythonExe = devPython;
             _serverScript = devServer;
-            _versionScript = devVersion;
+            _infoScript = devInfo;
             _workingDir = Path.Combine(devRoot, "CellCountX.Py");
 
             return new PythonEnvCheckResult
@@ -54,14 +54,14 @@ public class PythonServer
             Message = "Debug モード：開発用 Python が見つかりません。"
         };
 #else
+        if (TryFindBundledPython())
+            return new PythonEnvCheckResult { IsAvailable = true, Message = "同梱 Python を使用します。" };
+
         if (TryFindCondaCellpose())
             return new PythonEnvCheckResult { IsAvailable = true, Message = "Conda の CellPose 環境を使用します。" };
 
         if (TryFindExistingPython())
             return new PythonEnvCheckResult { IsAvailable = true, Message = "既存の Python 環境を使用します。" };
-
-        if (TryFindBundledPython())
-            return new PythonEnvCheckResult { IsAvailable = true, Message = "同梱 Python を使用します。" };
 
         return new PythonEnvCheckResult
         {
@@ -81,7 +81,7 @@ public class PythonServer
         string[] candidates =
         [
             Path.Combine(user, "miniconda3", "envs", "cellpose", "python.exe"),
-            Path.Combine(user, "anaconda3", "envs", "cellpose", "python.exe")
+        Path.Combine(user, "anaconda3", "envs", "cellpose", "python.exe")
         ];
 
         foreach (var exe in candidates)
@@ -106,12 +106,22 @@ public class PythonServer
 
                 if (p.WaitForExit(10000) && p.ExitCode == 0)
                 {
+                    // Python は OK → 次に server.py / version script の存在を確認
+                    string baseDir = AppContext.BaseDirectory;
+
+                    string server = Path.Combine(baseDir, "server.py");
+                    string info = Path.Combine(baseDir, "get_cellpose_info.py");
+
+                    if (!File.Exists(server) || !File.Exists(info))
+                    {
+                        // Cellpose はあるが、アプリ側のスクリプトが欠けている
+                        return false;
+                    }
+
                     _pythonExe = exe;
                     _workingDir = Path.GetDirectoryName(exe)!;
-
-                    string baseDir = AppContext.BaseDirectory;
-                    _serverScript = Path.Combine(baseDir, "server.py");
-                    _versionScript = Path.Combine(baseDir, "get_cellpose_version.py");
+                    _serverScript = server;
+                    _infoScript = info;
 
                     return true;
                 }
@@ -144,11 +154,22 @@ public class PythonServer
 
             if (p.WaitForExit(10000) && p.ExitCode == 0)
             {
-                _pythonExe = "python";
-                _workingDir = AppContext.BaseDirectory;
+                // Python は OK → 次に server.py / version script の存在を確認
+                string baseDir = AppContext.BaseDirectory;
 
-                _serverScript = Path.Combine(_workingDir, "server.py");
-                _versionScript = Path.Combine(_workingDir, "get_cellpose_version.py");
+                string server = Path.Combine(baseDir, "server.py");
+                string info = Path.Combine(baseDir, "get_cellpose_info.py");
+
+                if (!File.Exists(server) || !File.Exists(info))
+                {
+                    // Cellpose はあるが、アプリ側のスクリプトが欠けている
+                    return false;
+                }
+
+                _pythonExe = "python";
+                _workingDir = baseDir;
+                _serverScript = server;
+                _infoScript = info;
 
                 return true;
             }
@@ -167,14 +188,14 @@ public class PythonServer
 
         string distPython = Path.Combine(baseDir, "python", "python.exe");
         string distServer = Path.Combine(baseDir, "server.py");
-        string distVersionScript = Path.Combine(baseDir, "get_cellpose_version.py");
+        string distInfoScript = Path.Combine(baseDir, "get_cellpose_info.py");
 
-        if (File.Exists(distPython) && File.Exists(distServer))
+        if (File.Exists(distPython) && File.Exists(distServer) && File.Exists(distInfoScript))
         {
             _pythonExe = distPython;
             _serverScript = distServer;
             _workingDir = baseDir;
-            _versionScript = distVersionScript;
+            _infoScript = distInfoScript;
             return true;
         }
 
@@ -184,18 +205,18 @@ public class PythonServer
     // ---------------------------------------------------------
     // Cellpose バージョンおよび GPU 利用可能性の取得
     // ---------------------------------------------------------
-    public (string? cellposeVersion, bool? gpuAvailable) GetCellposeVersion()
+    public (string? cellposeVersion, bool? gpuAvailable) GetCellposeInfo()
     {
-        if (string.IsNullOrEmpty(_pythonExe) || string.IsNullOrEmpty(_versionScript))
+        if (string.IsNullOrEmpty(_pythonExe) || string.IsNullOrEmpty(_infoScript))
             return (null, null);
 
-        if (!File.Exists(_versionScript))
+        if (!File.Exists(_infoScript))
             return (null, null);
 
         var psi = new ProcessStartInfo
         {
             FileName = _pythonExe,
-            Arguments = $"\"{_versionScript}\"",
+            Arguments = $"\"{_infoScript}\"",
             WorkingDirectory = _workingDir,
             RedirectStandardOutput = true,
             RedirectStandardError = true,

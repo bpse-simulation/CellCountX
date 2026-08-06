@@ -66,6 +66,18 @@
 
     <Copy SourceFiles="python_embed\python312._pth.template"
           DestinationFiles="$(OutDir)python\python312._pth" />
+
+    <Copy SourceFiles="..\CellCountX.Py\server.py"
+          DestinationFolder="$(OutDir)" />
+
+    <Copy SourceFiles="..\CellCountX.Py\remove_edge_cells.py"
+          DestinationFolder="$(OutDir)" />
+
+    <Copy SourceFiles="..\CellCountX.Py\overlay.py"
+          DestinationFolder="$(OutDir)" />
+
+    <Copy SourceFiles="..\CellCountX.Py\get_cellpose_info.py"
+          DestinationFolder="$(OutDir)" />
   </Target>
 
   <!-- ============================
@@ -109,16 +121,16 @@
     <Copy SourceFiles="..\CellCountX.Py\overlay.py"
           DestinationFolder="$(PublishDir)" />
 
-    <Copy SourceFiles="..\CellCountX.Py\get_cellpose_version.py"
+    <Copy SourceFiles="..\CellCountX.Py\get_cellpose_info.py"
           DestinationFolder="$(PublishDir)" />
   </Target>
 
   <!-- ============================
-       Clean（Python 削除は Release / ReleaseFull のみ）
+       Clean（Python 削除は Release のみ）
        ============================ -->
   <Target Name="CleanCopiedPython"
           BeforeTargets="Clean"
-          Condition="'$(Configuration)' == 'Release' OR '$(Configuration)' == 'ReleaseFull'">
+          Condition="'$(Configuration)' == 'Release'">
 
     <RemoveDir Directories="$(OutDir)python" />
     <RemoveDir Directories="$(PublishDir)python" />
@@ -126,12 +138,12 @@
     <Delete Files="$(OutDir)server.py" />
     <Delete Files="$(OutDir)remove_edge_cells.py" />
     <Delete Files="$(OutDir)overlay.py" />
-    <Delete Files="$(OutDir)get_cellpose_version.py" />
+    <Delete Files="$(OutDir)get_cellpose_info.py" />
 
     <Delete Files="$(PublishDir)server.py" />
     <Delete Files="$(PublishDir)remove_edge_cells.py" />
     <Delete Files="$(PublishDir)overlay.py" />
-    <Delete Files="$(PublishDir)get_cellpose_version.py" />
+    <Delete Files="$(PublishDir)get_cellpose_info.py" />
   </Target>
 
   <!-- アイコン -->
