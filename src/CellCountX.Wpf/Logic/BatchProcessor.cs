@@ -74,14 +74,19 @@ public class BatchProcessor(PythonClient python)
                 use_edge_bottom = req.UseEdgeBottom,
                 use_edge_left = req.UseEdgeLeft,
                 use_edge_right = req.UseEdgeRight,
-                edge_margin = req.EdgeMargin
+                edge_margin = req.EdgeMargin,
+
+                // 出力オプション
+                save_overlay = req.SaveOverlay,
+                save_masks = req.SaveMasks,
+                save_seg = req.SaveSegNpy
             };
 
             string json = JsonSerializer.Serialize(payload);
 
             try
             {
-                // ★ タイムアウトは PythonClient が一元管理
+                // タイムアウトは PythonClient が一元管理
                 var py = await _python.RunAsync(json, req.TimeoutSeconds, token);
 
                 if (py.IsError)
@@ -100,7 +105,7 @@ public class BatchProcessor(PythonClient python)
                     continue;
                 }
 
-                // ★ CellResult に非接着細胞除去後の細胞数を追加
+                // CellResult に非接着細胞除去後の細胞数を追加
                 results.Add(new CellResult
                 {
                     FileName = Path.GetFileName(file),
@@ -112,7 +117,7 @@ public class BatchProcessor(PythonClient python)
             }
             catch (Exception ex)
             {
-                // ★ PythonClient 内部例外（Kill 失敗など）もここで拾う
+                // PythonClient 内部例外（Kill 失敗など）もここで拾う
                 Log?.Invoke($"例外: {ex.Message}");
             }
 
@@ -121,11 +126,12 @@ public class BatchProcessor(PythonClient python)
 
         Progress?.Invoke(100);
 
-        // ★ CSV に FilteredCellCount を含めて保存
-        string savedPath = _csvExporter.Save(results, req.OutputFolder);
+        string fileName = "cells.csv";
+        // CSV に FilteredCellCount を含めて保存
+        string savedPath = _csvExporter.Save(results, req.OutputFolder, fileName);
         // cells.csv 以外なら別名保存されたということ
 
-        if (!savedPath.EndsWith("cells.csv"))
+        if (!savedPath.EndsWith(fileName))
         {
             Log?.Invoke($"CSV は Excel によってロックされていたため、別名で保存しました: {savedPath}");
         }

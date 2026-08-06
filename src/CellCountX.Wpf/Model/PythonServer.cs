@@ -81,7 +81,7 @@ public class PythonServer
         string[] candidates =
         [
             Path.Combine(user, "miniconda3", "envs", "cellpose", "python.exe"),
-        Path.Combine(user, "anaconda3", "envs", "cellpose", "python.exe")
+            Path.Combine(user, "anaconda3", "envs", "cellpose", "python.exe")
         ];
 
         foreach (var exe in candidates)

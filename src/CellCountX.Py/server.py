@@ -124,9 +124,27 @@ def main():
         output_folder = data.get("output", folder)
         os.makedirs(output_folder, exist_ok=True)
 
-        # マスク保存
-        mask_path = os.path.join(output_folder, f"{base}_cp_masks.tif")
-        tifffile.imwrite(mask_path, masks.astype("uint16"))
+        # ---------------------------------------------------------
+        # 保存設定（C# 側から渡される）
+        # ---------------------------------------------------------
+        save_mask = bool(data.get("save_masks", False))
+        save_seg   = bool(data.get("save_seg", False))
+        save_overlay = bool(data.get("save_overlay", False))
+
+        from cellpose import io
+        save_path = os.path.join(output_folder, base)
+
+        # ---------------------------------------------------------
+        # マスク保存（_cp_masks.tif）
+        # ---------------------------------------------------------
+        if save_mask:
+            io.save_masks(image, masks, flows, save_path)
+
+        # ---------------------------------------------------------
+        # seg.npy 保存（_seg.npy）
+        # ---------------------------------------------------------
+        if save_seg:
+            io.masks_flows_to_seg([image], [masks], [flows], save_path)
 
         original_count = int(masks.max())
 
@@ -134,7 +152,7 @@ def main():
         masks = np.squeeze(masks)
 
         # ---------------------------------------------------------
-        # 境界細胞除去（4方向 ON/OFF）
+        # 境界細胞除去
         # ---------------------------------------------------------
         use_edge_filter = data.get("use_edge_filter", False)
 
@@ -167,7 +185,7 @@ def main():
         filtered_count = int(masks.max())
 
         # ---------------------------------------------------------
-        # overlay
+        # overlay 保存（_overlay.png）
         # ---------------------------------------------------------
         if use_edge_filter:
             overlay = create_overlay_removed(
@@ -179,7 +197,10 @@ def main():
             overlay = create_overlay(image_gray, masks)
 
         overlay_path = os.path.join(output_folder, f"{base}_overlay.png")
-        tifffile.imwrite(overlay_path, overlay)
+        if save_overlay:
+            tifffile.imwrite(overlay_path, overlay)
+        else:
+            overlay_path = None
 
         # ---------------------------------------------------------
         # 結果返却
@@ -188,15 +209,16 @@ def main():
             "count": original_count,
             "filtered_count": filtered_count,
             "gpu_used": use_gpu,
-            "mask_path": mask_path,
-            "overlay_path": overlay_path,
             "edge_filter_used": use_edge_filter,
             "edge_top": use_top,
             "edge_bottom": use_bottom,
             "edge_left": use_left,
             "edge_right": use_right,
             "edge_margin": margin,
-            "custom_model_used": bool(custom_model_path)
+            "custom_model_used": bool(custom_model_path),
+            "save_mask": save_mask,
+            "save_seg": save_seg,
+            "save_overlay": save_overlay
         }
 
         print(json.dumps(result), flush=True)

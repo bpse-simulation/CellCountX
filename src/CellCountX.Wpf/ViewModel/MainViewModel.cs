@@ -248,7 +248,12 @@ public class MainViewModel : INotifyPropertyChanged
             UseEdgeBottom = Properties.Settings.Default.UseEdgeBottom,
             UseEdgeLeft = Properties.Settings.Default.UseEdgeLeft,
             UseEdgeRight = Properties.Settings.Default.UseEdgeRight,
-            EdgeMargin = Properties.Settings.Default.EdgeMargin
+            EdgeMargin = Properties.Settings.Default.EdgeMargin,
+
+            // 出力オプション
+            SaveOverlay = Properties.Settings.Default.SaveOverlay,
+            SaveMasks = Properties.Settings.Default.SaveMasks,
+            SaveSegNpy = Properties.Settings.Default.SaveSegNpy
         };
 
         await _processor.StartAsync(req, _cts.Token);

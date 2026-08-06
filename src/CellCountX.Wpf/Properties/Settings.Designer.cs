@@ -130,5 +130,41 @@ namespace CellCountX.Wpf.Properties {
                 this["EdgeMargin"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool SaveOverlay {
+            get {
+                return ((bool)(this["SaveOverlay"]));
+            }
+            set {
+                this["SaveOverlay"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool SaveMasks {
+            get {
+                return ((bool)(this["SaveMasks"]));
+            }
+            set {
+                this["SaveMasks"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool SaveSegNpy {
+            get {
+                return ((bool)(this["SaveSegNpy"]));
+            }
+            set {
+                this["SaveSegNpy"] = value;
+            }
+        }
     }
 }

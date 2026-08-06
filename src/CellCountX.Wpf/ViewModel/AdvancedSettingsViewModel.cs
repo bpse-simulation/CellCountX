@@ -14,6 +14,9 @@ public class AdvancedSettingsViewModel : INotifyPropertyChanged
     private bool _useEdgeLeft;
     private bool _useEdgeRight;
     private int _edgeMargin;
+    private bool _saveOverlay;
+    private bool _saveMasks;
+    private bool _saveSegNpy;
 
     // -----------------------------
     // Timeout
@@ -107,19 +110,62 @@ public class AdvancedSettingsViewModel : INotifyPropertyChanged
         }
     }
 
+    // -----------------------------
+    // Save オプション
+    // -----------------------------
+    public bool SaveOverlay
+    {
+        get => _saveOverlay;
+        set
+        {
+            _saveOverlay = value;
+            OnPropertyChanged(nameof(SaveOverlay));
+        }
+    }
+
+    public bool SaveMasks
+    {
+        get => _saveMasks;
+        set
+        {
+            _saveMasks = value;
+            OnPropertyChanged(nameof(SaveMasks));
+        }
+    }
+
+    public bool SaveSegNpy
+    {
+        get => _saveSegNpy;
+        set
+        {
+            _saveSegNpy = value;
+            OnPropertyChanged(nameof(SaveSegNpy));
+        }
+    }
+
     // コマンド
     public ICommand BrowseModelCommand { get; }
 
     public AdvancedSettingsViewModel()
     {
+        // タイムアウト秒数
         TimeoutSeconds = Properties.Settings.Default.TimeoutSeconds;
+
+        // Cellpose モデルパス
         CellposeModelPath = Properties.Settings.Default.CellposeModelPath;
+
+        // 境界細胞除去
         UseEdgeFilter = Properties.Settings.Default.UseEdgeFilter;
         UseEdgeTop = Properties.Settings.Default.UseEdgeTop;
         UseEdgeBottom = Properties.Settings.Default.UseEdgeBottom;
         UseEdgeLeft = Properties.Settings.Default.UseEdgeLeft;
         UseEdgeRight = Properties.Settings.Default.UseEdgeRight;
         EdgeMargin = Properties.Settings.Default.EdgeMargin;
+
+        // 出力オプション
+        SaveOverlay = Properties.Settings.Default.SaveOverlay;
+        SaveMasks = Properties.Settings.Default.SaveMasks;
+        SaveSegNpy = Properties.Settings.Default.SaveSegNpy;
 
         BrowseModelCommand = new RelayCommand(_ => BrowseModel());
     }
@@ -162,6 +208,11 @@ public class AdvancedSettingsViewModel : INotifyPropertyChanged
         Properties.Settings.Default.UseEdgeLeft = UseEdgeLeft;
         Properties.Settings.Default.UseEdgeRight = UseEdgeRight;
         Properties.Settings.Default.EdgeMargin = EdgeMargin;
+
+        // 出力オプション
+        Properties.Settings.Default.SaveOverlay = SaveOverlay;
+        Properties.Settings.Default.SaveMasks = SaveMasks;
+        Properties.Settings.Default.SaveSegNpy = SaveSegNpy;
 
         Properties.Settings.Default.Save();
     }
