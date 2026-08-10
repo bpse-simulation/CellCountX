@@ -103,27 +103,54 @@ jobs:
       # ---------------------------------------------
       - name: Generate release notes
         id: notes
+        shell: bash
         run: |
-          # 現在のタグ
-          $current = "${{ steps.get_version.outputs.version }}"
+          current="${{ steps.get_version.outputs.version }}"
 
-          # すべてのタグを新しい順に取得
-          $tags = git tag --sort=-creatordate
+          # タグ一覧を version ソートで取得（安全）
+          mapfile -t tags < <(git tag --sort=version:refname)
 
-          # 前のタグを取得（現在のタグ以外で最初のもの）
-          $prev = ($tags | Where-Object { $_ -ne $current })[0]
+          # タグが1つもない場合
+          if (( ${#tags[@]} == 0 )); then
+            log="(no tags found)"
+          else
+            # current のインデックスを探す（grep を使わず安全に）
+            idx=-1
+            for i in "${!tags[@]}"; do
+              if [[ "${tags[$i]}" == "$current" ]]; then
+                idx=$i
+                break
+              fi
+            done
 
-          # コミットログを生成
-          $log = git log $prev..$current --pretty=format:"- %s (%h)"
+            # current がタグ一覧に存在しない場合
+            if (( idx == -1 )); then
+              log="(current tag '$current' not found in tag list)"
+            else
+              # 前のタグを決定
+              if (( idx == 0 )); then
+                prev=""
+              else
+                prev="${tags[$((idx-1))]}"
+              fi
 
-          # Release ノート本文
-          $body = "## Changes in $current`n`n$log`n`n_Automatically generated from commit history._"
+              # コミットログ生成
+              if [[ -z "$prev" ]]; then
+                log="(no previous tag)"
+              else
+                log=$(git log "$prev".."$current" --pretty=format:"- %s (%h)")
+                [[ -z "$log" ]] && log="(no commits between $prev and $current)"
+              fi
+            fi
+          fi
 
-          # 出力
-          $body | Out-File release_notes.txt -Encoding utf8
-          echo "body<<EOF" >> $env:GITHUB_OUTPUT
-          Get-Content release_notes.txt >> $env:GITHUB_OUTPUT
-          echo "EOF" >> $env:GITHUB_OUTPUT
+          body="## Changes in $current
+
+$log
+
+_Automatically generated from commit history._"
+
+          printf "body<<EOF\n%s\nEOF\n" "$body" >> "$GITHUB_OUTPUT"
 
       # ---------------------------------------------
       # ZIP 作成（フル版）
