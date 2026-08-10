@@ -99,15 +99,27 @@ jobs:
         run: dotnet publish src/CellCountX.Wpf/CellCountX.Wpf.csproj -c ReleaseLight -o publish_light
 
       # ---------------------------------------------
-      # Release ノート自動生成
+      # Release ノート自動生成（コミットログ）
       # ---------------------------------------------
       - name: Generate release notes
         id: notes
         run: |
+          # 現在のタグ
           $current = "${{ steps.get_version.outputs.version }}"
-          $prev = git describe --tags --abbrev=0 $current^
+
+          # すべてのタグを新しい順に取得
+          $tags = git tag --sort=-creatordate
+
+          # 前のタグを取得（現在のタグ以外で最初のもの）
+          $prev = ($tags | Where-Object { $_ -ne $current })[0]
+
+          # コミットログを生成
           $log = git log $prev..$current --pretty=format:"- %s (%h)"
+
+          # Release ノート本文
           $body = "## Changes in $current`n`n$log`n`n_Automatically generated from commit history._"
+
+          # 出力
           $body | Out-File release_notes.txt -Encoding utf8
           echo "body<<EOF" >> $env:GITHUB_OUTPUT
           Get-Content release_notes.txt >> $env:GITHUB_OUTPUT
