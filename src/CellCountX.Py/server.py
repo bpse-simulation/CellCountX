@@ -3,7 +3,7 @@ import sys
 import json
 import warnings
 import contextlib
-import tifffile
+import cv2
 import torch
 import numpy as np
 from cellpose import models
@@ -187,20 +187,18 @@ def main():
         # ---------------------------------------------------------
         # overlay 保存（_overlay.png）
         # ---------------------------------------------------------
-        if use_edge_filter:
-            overlay = create_overlay_removed(
-                image_gray,
-                cleaned_masks,     # keep_mask（境界除去後のマスク）
-                edge_removed_mask  # remove_mask（境界除去された細胞）
-            )
-        else:
-            overlay = create_overlay(image_gray, masks)
-
-        overlay_path = os.path.join(output_folder, f"{base}_overlay.png")
         if save_overlay:
-            tifffile.imwrite(overlay_path, overlay)
-        else:
-            overlay_path = None
+            if use_edge_filter:
+                overlay = create_overlay_removed(
+                    image_gray,
+                    cleaned_masks,     # keep_mask（境界除去後のマスク）
+                    edge_removed_mask  # remove_mask（境界除去された細胞）
+                )
+            else:
+                overlay = create_overlay(image_gray, masks)
+
+            overlay_path = os.path.join(output_folder, f"{base}_overlay.png")
+            cv2.imwrite(overlay_path, overlay)
 
         # ---------------------------------------------------------
         # 結果返却

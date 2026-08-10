@@ -19,13 +19,22 @@ public class BatchProcessor(PythonClient python)
         // バッチ処理開始時に使用モデルをログ出力
         Log?.Invoke($"使用モデル: {(string.IsNullOrEmpty(req.CellposeModelPath) ? "cpsam_v2" : req.CellposeModelPath)}");
 
-        // 全角パスチェック
+        // 入力フォルダの全角チェック
         if (req.InputFolder.Any(c => c > 127))
         {
             Log?.Invoke("入力フォルダのパスに全角文字が含まれています。処理を中断します。");
             Completed?.Invoke([]);
             return;
         }
+        
+        // 出力フォルダの全角チェック
+        if (req.OutputFolder.Any(c => c > 127))
+        {
+            Log?.Invoke("出力フォルダのパスに全角文字が含まれています。処理を中断します。");
+            Completed?.Invoke([]);
+            return;
+        }
+
 
         var files = Directory
             .EnumerateFiles(req.InputFolder)

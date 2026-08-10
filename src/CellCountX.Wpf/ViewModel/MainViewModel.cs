@@ -2,6 +2,7 @@
 using CellCountX.Wpf.Model;
 using System.ComponentModel;
 using System.IO;
+using System.Text.Json;
 using System.Windows;
 using System.Windows.Input;
 
@@ -256,11 +257,22 @@ public class MainViewModel : INotifyPropertyChanged
             SaveSegNpy = Properties.Settings.Default.SaveSegNpy
         };
 
+        // 設定を JSON に保存
+        File.WriteAllText(Path.Combine(OutputFolder, "settings.json"),
+            JsonSerializer.Serialize(req, s_writeOptions));
+
+        // バッチ処理開始
         await _processor.StartAsync(req, _cts.Token);
 
         // 中断・エラー時もここで UI を復帰
         IsRunning = false;
     }
+
+    private static readonly JsonSerializerOptions s_writeOptions = new()
+    {
+        WriteIndented = true,
+        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+    };
 
     // ---------------------------------------------------------
     // キャンセル
