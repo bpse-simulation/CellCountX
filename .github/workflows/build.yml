@@ -13,11 +13,17 @@ jobs:
     runs-on: windows-latest
 
     steps:
+      # ---------------------------------------------
+      # Checkout
+      # ---------------------------------------------
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0   # git describe のために必須
 
+      # ---------------------------------------------
+      # Setup .NET
+      # ---------------------------------------------
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
@@ -108,14 +114,14 @@ jobs:
           # 現在のタグ
           $current = "${{ steps.get_version.outputs.version }}"
 
-          # タグ一覧を配列として取得（version ソート）
+          # タグ一覧（version ソート）
           $tags = git tag --sort=version:refname | ForEach-Object { $_.Trim() }
 
           if ($tags.Count -eq 0) {
             $log = "(no tags found)"
           }
           else {
-            # current のインデックスを探す
+            # current のインデックス
             $idx = $tags.IndexOf($current)
 
             if ($idx -lt 0) {
@@ -134,9 +140,14 @@ jobs:
                 $log = "(no previous tag)"
               }
               else {
-                $log = git log "$prev..$current" --pretty=format:"- %s (%h)"
-                if ([string]::IsNullOrEmpty($log)) {
+                # git log は GitHub Actions の pwsh では常に配列として返る
+                $logLines = git log "$prev..$current" --pretty=format:"- %s (%h)"
+
+                if ($logLines.Count -eq 0) {
                   $log = "(no commits between $prev and $current)"
+                }
+                else {
+                  $log = $logLines -join "`n"
                 }
               }
             }
