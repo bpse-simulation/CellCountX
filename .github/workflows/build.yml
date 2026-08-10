@@ -103,18 +103,44 @@ jobs:
       # ---------------------------------------------
       - name: Generate release notes
         id: notes
+        shell: pwsh
         run: |
           # 現在のタグ
           $current = "${{ steps.get_version.outputs.version }}"
 
-          # すべてのタグを新しい順に取得
-          $tags = git tag --sort=-creatordate
+          # タグ一覧を配列として取得（version ソート）
+          $tags = git tag --sort=version:refname | ForEach-Object { $_.Trim() }
 
-          # 前のタグを取得（現在のタグ以外で最初のもの）
-          $prev = ($tags | Where-Object { $_ -ne $current })[0]
+          if ($tags.Count -eq 0) {
+            $log = "(no tags found)"
+          }
+          else {
+            # current のインデックスを探す
+            $idx = $tags.IndexOf($current)
 
-          # コミットログを生成
-          $log = git log $prev..$current --pretty=format:"- %s (%h)"
+            if ($idx -lt 0) {
+              $log = "(current tag '$current' not found in tag list)"
+            }
+            else {
+              # 前のタグ
+              if ($idx -eq 0) {
+                $prev = ""
+              }
+              else {
+                $prev = $tags[$idx - 1]
+              }
+
+              if ([string]::IsNullOrEmpty($prev)) {
+                $log = "(no previous tag)"
+              }
+              else {
+                $log = git log "$prev..$current" --pretty=format:"- %s (%h)"
+                if ([string]::IsNullOrEmpty($log)) {
+                  $log = "(no commits between $prev and $current)"
+                }
+              }
+            }
+          }
 
           # Release ノート本文
           $body = "## Changes in $current`n`n$log`n`n_Automatically generated from commit history._"
