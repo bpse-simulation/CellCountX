@@ -12,60 +12,12 @@
     <AssemblyName>CellCountX</AssemblyName>
   </PropertyGroup>
 
-  <!-- ビルド構成 -->
-  <PropertyGroup Condition="'$(Configuration)'=='ReleaseFull'">
-    <DefineConstants>FULL</DefineConstants>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)'=='ReleaseLight'">
-    <DefineConstants>LIGHT</DefineConstants>
-  </PropertyGroup>
-
-  <!-- ZIP ファイル -->
-  <ItemGroup>
-    <PythonZip Include="python-3.12.10-embed-amd64.zip" />
-  </ItemGroup>
-
   <!-- ============================
-       ZIP 展開（Release / ReleaseFull）
-       ============================ -->
-  <Target Name="ExtractPythonZip"
-          BeforeTargets="CopyPythonOnBuild;CopyPythonOnPublish"
-          Condition="'$(Configuration)' == 'Release' OR '$(Configuration)' == 'ReleaseFull'">
-
-    <PropertyGroup>
-      <PythonExtractDir>$(IntermediateOutputPath)%(PythonZip.Filename)\</PythonExtractDir>
-    </PropertyGroup>
-
-    <MakeDir Directories="$(PythonExtractDir)" />
-
-    <Unzip SourceFiles="@(PythonZip)"
-           DestinationFolder="$(PythonExtractDir)" />
-  </Target>
-
-  <!-- ============================
-       Build 時の Python コピー（Release / ReleaseFull）
+       Build 時の Python スクリプトコピー（Release）
        ============================ -->
   <Target Name="CopyPythonOnBuild"
           AfterTargets="Build"
-          Condition="'$(Configuration)' == 'Release' OR '$(Configuration)' == 'ReleaseFull'">
-
-    <ItemGroup>
-      <ExtractedPythonFiles Include="$(PythonExtractDir)**\*" />
-      <PythonFiles Include="..\CellCountX.Py\cellpose\Lib\**\*"
-                   Exclude="..\CellCountX.Py\cellpose\pyvenv.cfg;
-                            ..\CellCountX.Py\cellpose\.gitignore;
-                            ..\CellCountX.Py\cellpose\Lib\**\__pycache__\**" />
-    </ItemGroup>
-
-    <Copy SourceFiles="@(ExtractedPythonFiles)"
-          DestinationFolder="$(OutDir)python\%(RecursiveDir)" />
-
-    <Copy SourceFiles="@(PythonFiles)"
-          DestinationFolder="$(OutDir)python\%(RecursiveDir)" />
-
-    <Copy SourceFiles="python_embed\python312._pth.template"
-          DestinationFiles="$(OutDir)python\python312._pth" />
+          Condition="'$(Configuration)' == 'Release'">
 
     <Copy SourceFiles="..\CellCountX.Py\server.py"
           DestinationFolder="$(OutDir)" />
@@ -81,36 +33,11 @@
   </Target>
 
   <!-- ============================
-       Publish 時の Python コピー（Release / ReleaseFull）
-       ============================ -->
-  <Target Name="CopyPythonOnPublish"
-          AfterTargets="Publish"
-          Condition="'$(Configuration)' == 'Release' OR '$(Configuration)' == 'ReleaseFull'">
-
-    <ItemGroup>
-      <ExtractedPythonFiles Include="$(PythonExtractDir)**\*" />
-      <PythonFiles Include="..\CellCountX.Py\cellpose\Lib\**\*"
-                   Exclude="..\CellCountX.Py\cellpose\pyvenv.cfg;
-                            ..\CellCountX.Py\cellpose\.gitignore;
-                            ..\CellCountX.Py\cellpose\Lib\**\__pycache__\**" />
-    </ItemGroup>
-
-    <Copy SourceFiles="@(ExtractedPythonFiles)"
-          DestinationFolder="$(PublishDir)python\%(RecursiveDir)" />
-
-    <Copy SourceFiles="@(PythonFiles)"
-          DestinationFolder="$(PublishDir)python\%(RecursiveDir)" />
-
-    <Copy SourceFiles="python_embed\python312._pth.template"
-          DestinationFiles="$(PublishDir)python\python312._pth" />
-  </Target>
-
-  <!-- ============================
-       server.py などは Release / ReleaseFull / ReleaseLight 全てでコピー
+       Publish 時の Python スクリプトコピー（Release）
        ============================ -->
   <Target Name="CopyPythonScripts"
           AfterTargets="Publish"
-          Condition="'$(Configuration)' == 'Release' OR '$(Configuration)' == 'ReleaseFull' OR '$(Configuration)' == 'ReleaseLight'">
+          Condition="'$(Configuration)' == 'Release'">
 
     <Copy SourceFiles="..\CellCountX.Py\server.py"
           DestinationFolder="$(PublishDir)" />
@@ -126,14 +53,11 @@
   </Target>
 
   <!-- ============================
-       Clean（Python 削除は Release のみ）
+       Clean（Python スクリプト削除）
        ============================ -->
   <Target Name="CleanCopiedPython"
           BeforeTargets="Clean"
           Condition="'$(Configuration)' == 'Release'">
-
-    <RemoveDir Directories="$(OutDir)python" />
-    <RemoveDir Directories="$(PublishDir)python" />
 
     <Delete Files="$(OutDir)server.py" />
     <Delete Files="$(OutDir)remove_edge_cells.py" />

@@ -39,33 +39,6 @@ jobs:
           echo "version=$tag" >> $env:GITHUB_OUTPUT
 
       # ---------------------------------------------
-      # python-runtime（フル版用）を取得
-      # ---------------------------------------------
-      - name: Download python-runtime part1
-        run: |
-          curl -L -o site-packages.zip.001 `
-            https://github.com/bpse-simulation/CellCountX/releases/download/python-runtime/site-packages.zip.001
-
-      - name: Download python-runtime part2
-        run: |
-          curl -L -o site-packages.zip.002 `
-            https://github.com/bpse-simulation/CellCountX/releases/download/python-runtime/site-packages.zip.002
-
-      # ---------------------------------------------
-      # 分割 zip を結合（cmd.exe）
-      # ---------------------------------------------
-      - name: Combine python-runtime zip
-        shell: cmd
-        run: |
-          copy /b site-packages.zip.001 + site-packages.zip.002 site-packages.zip
-
-      # ---------------------------------------------
-      # site-packages.zip を展開（7z）
-      # ---------------------------------------------
-      - name: Extract python-runtime
-        run: 7z x site-packages.zip -opython
-
-      # ---------------------------------------------
       # csproj の InformationalVersion を書き換え
       # ---------------------------------------------
       - name: Replace InformationalVersion in csproj
@@ -86,23 +59,10 @@ jobs:
           $xml | Set-Content $path -Encoding UTF8
 
       # ---------------------------------------------
-      # Publish（フル版）
+      # Publish（軽量版のみ）
       # ---------------------------------------------
-      - name: Publish Full
-        run: dotnet publish src/CellCountX.Wpf/CellCountX.Wpf.csproj -c ReleaseFull -o publish_full
-
-      # ---------------------------------------------
-      # python runtime を publish_full に含める
-      # ---------------------------------------------
-      - name: Copy python runtime into publish_full
-        run: |
-          Copy-Item -Path python\* -Destination publish_full/python -Recurse
-
-      # ---------------------------------------------
-      # Publish（軽量版）
-      # ---------------------------------------------
-      - name: Publish Light
-        run: dotnet publish src/CellCountX.Wpf/CellCountX.Wpf.csproj -c ReleaseLight -o publish_light
+      - name: Publish
+        run: dotnet publish src/CellCountX.Wpf/CellCountX.Wpf.csproj -c Release -o publish
 
       # ---------------------------------------------
       # Release ノート自動生成（コミットログ）
@@ -163,26 +123,18 @@ jobs:
           echo "EOF" >> $env:GITHUB_OUTPUT
 
       # ---------------------------------------------
-      # ZIP 作成（フル版）
+      # ZIP 作成（軽量版のみ）
       # ---------------------------------------------
-      - name: Create split zip (Full)
+      - name: Create zip
         run: |
-          7z a -tzip -v1900m CellCountX-${{ steps.get_version.outputs.version }}.zip publish_full\*
+          7z a -tzip CellCountX-${{ steps.get_version.outputs.version }}.zip publish\*
 
       # ---------------------------------------------
-      # ZIP 作成（軽量版）
-      # ---------------------------------------------
-      - name: Create zip (Light)
-        run: |
-          7z a -tzip CellCountX-light-${{ steps.get_version.outputs.version }}.zip publish_light\*
-
-      # ---------------------------------------------
-      # Release にアップロード（フル版 + 軽量版）
+      # Release にアップロード（軽量版のみ）
       # ---------------------------------------------
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            CellCountX-${{ steps.get_version.outputs.version }}.zip*
-            CellCountX-light-${{ steps.get_version.outputs.version }}.zip
+            CellCountX-${{ steps.get_version.outputs.version }}.zip
           body: ${{ steps.notes.outputs.body }}

@@ -30,7 +30,8 @@ public class PythonServer
 #if DEBUG
         string baseDir = AppContext.BaseDirectory;
         string devRoot = Path.GetFullPath(Path.Combine(baseDir, @"..\..\..\.."));
-        string devPython = Path.Combine(devRoot, "CellCountX.Py", "cellpose", "Scripts", "python.exe");
+        string user = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        string devPython = Path.Combine(user, "anaconda3", "envs", "cellpose", "python.exe");
         string devServer = Path.Combine(devRoot, "CellCountX.Py", "server.py");
         string devInfo = Path.Combine(devRoot, "CellCountX.Py", "get_cellpose_info.py");
 
