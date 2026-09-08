@@ -44,7 +44,7 @@ jobs:
       - name: Replace InformationalVersion in csproj
         run: |
           $version = "${{ steps.get_version.outputs.version }}"
-          $path = "src/CellCountX.Wpf/CellCountX.Wpf.csproj"
+          $path = "src/CellCounter.Wpf/CellCounter.Wpf.csproj"
 
           $xml = Get-Content $path
 
@@ -62,7 +62,7 @@ jobs:
       # Publish（軽量版のみ）
       # ---------------------------------------------
       - name: Publish
-        run: dotnet publish src/CellCountX.Wpf/CellCountX.Wpf.csproj -c Release -o publish
+        run: dotnet publish src/CellCounter.Wpf/CellCounter.Wpf.csproj -c Release -o publish
 
       # ---------------------------------------------
       # Release ノート自動生成（コミットログ）
@@ -127,7 +127,7 @@ jobs:
       # ---------------------------------------------
       - name: Create zip
         run: |
-          7z a -tzip CellCountX-${{ steps.get_version.outputs.version }}.zip publish\*
+          7z a -tzip CellCounter-${{ steps.get_version.outputs.version }}.zip publish\*
 
       # ---------------------------------------------
       # Release にアップロード（軽量版のみ）
@@ -136,5 +136,5 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            CellCountX-${{ steps.get_version.outputs.version }}.zip
+            CellCounter-${{ steps.get_version.outputs.version }}.zip
           body: ${{ steps.notes.outputs.body }}
