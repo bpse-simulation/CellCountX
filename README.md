@@ -1,24 +1,109 @@
-# 📘 CellCounter — Cellpose を GUI から扱える画像解析アプリ
+# CellCounter
 
-CellCounter は **Cellpose + PyTorch** をバックエンドに用いて、  
-GUI から画像フォルダを指定するだけで **細胞セグメンテーション・カウント・境界除去・CSV 出力・輪郭オーバーレイ生成**を行う WPF アプリケーションです。
+## 📘 Cellpose を GUI から扱える画像解析アプリ
+
+CellCounter は **Cellpose + PyTorch** をバックエンドに用いて、
+GUI から画像フォルダを指定するだけで **細胞セグメンテーション・カウント・境界除去・CSV 出力・輪郭オーバーレイ生成**を行うアプリケーションです。
 
 ---
 
-## 🧩 配布版の種類
+## 🔧 必要環境
 
-### 🟩 フル版（Python 同梱）
+CellCounter は **Cellpose を Python で実行するため、Python 環境が必要**です。
 
-- Embeddable Python + Cellpose + PyTorch を同梱  
-- Python のインストール不要  
-- ダウンロード後すぐに Cellpose が利用可能  
-- サイズは大きめ（数 GB）
+### ✔ Python の扱い
 
-### 🟦 軽量版（Python 非同梱）
+- CellCounter は Python を同梱しません
+- 起動時にユーザー環境の Python を自動検出します
+- Python が見つからない場合は Cellpose 推論を開始できません
+- Cellpose / PyTorch / NumPy / SciPy の import 可否を起動時にチェックします
 
-- Python は同梱されない  
-- ユーザーの Python（conda / PATH）を自動検出  
-- サイズが非常に小さい（約 540KB）
+### 📦 Python runtime（オプション）
+
+Python をお持ちでない場合は、以下の **CellCounter 用 Python runtime（site-packages のみ）**を利用できます：
+
+👉 https://github.com/bpse-simulation/CellCountX/releases/tag/python-runtime
+
+#### ⚠ 重要：この Python runtime は **site-packages のみ**です
+
+含まれるもの：
+
+- Cellpose
+- PyTorch
+- NumPy
+- SciPy
+- その他必要ライブラリ
+
+含まれないもの：
+
+- **Python 本体（python.exe / DLL）**
+- **python312._pth（埋め込み版のパス設定ファイル）**
+
+埋め込み Python を使う場合は、以下を別途用意してください：
+
+- Windows embeddable package (64-bit)
+https://www.python.org/downloads/windows/
+
+---
+
+## 🖥️ GUI 概要
+
+### メイン画面
+
+![image-main](image-main.png)
+
+- **画像フォルダ**
+- **出力フォルダ**
+- **GPU 使用**（利用可能な場合のみ有効）
+- **ログ表示領域**
+    - Python 環境チェック
+    - Cellpose バージョン
+    - GPU 利用可否
+- **開始ボタン**（Python が有効な場合のみ活性）
+- **キャンセルボタン**
+
+ログ例：
+
+```
+CellCounter 起動
+Python 環境チェック中…
+Conda の Cellpose 環境を使用します。
+Cellpose バージョン: 4.2.1.1
+Python 環境チェック完了
+```
+
+---
+
+## ⚙️ 詳細設定
+
+![image-detail](image-detail.png)
+
+詳細設定では、Cellpose 推論・境界除去・出力形式を細かく制御できます。
+
+### 🕒 タイムアウト（秒）
+
+- 指定した秒数で Python 推論を強制終了
+- **0 の場合は CPU/GPU に応じて自動設定**
+
+### 🧠 Cellpose モデル
+
+- 任意のモデルファイルを指定可能
+- **空欄の場合は Cellpose のデフォルトモデルを使用**
+
+### 🧹 境界細胞除去
+
+- **境界細胞除去を有効にする**
+- 除去方向
+    - 上端 / 下端 / 左端 / 右端
+- **マージン（px）**
+    - 初期値：2px
+    - Cellpose の境界細胞は 1〜2px 内側に生成されるため 2px を推奨
+
+### 📦 出力オプション
+
+- **結果オーバーレイ画像を保存**
+- **マスク画像を保存**
+- **seg.npy を保存**
 
 ---
 
@@ -26,18 +111,21 @@ GUI から画像フォルダを指定するだけで **細胞セグメンテー�
 
 ### 🧠 Cellpose 推論（GPU 対応）
 
-- フル版：同梱 Python を使用  
-- 軽量版：ユーザー環境の Python を自動検出  
-- GPU（CUDA / ROCm / DirectML / MPS）利用可否を自動判定
+- Python の自動検出
+- Cellpose import 判定
+- GPU 利用可否の自動判定
+- 推論結果を JSON で受け取り処理
 
-### 🔍 Python 環境チェック
+---
+
+## 🔍 Python 環境チェック
 
 起動時に以下を自動判定します：
 
-- Python の存在  
-- Cellpose の import 可否  
-- GPU 利用可否  
-- Cellpose バージョン  
+- Python の存在
+- Cellpose の import 可否
+- GPU 利用可否
+- Cellpose バージョン
 
 Python が利用できない場合は「開始」ボタンが無効化されます。
 
@@ -45,49 +133,45 @@ Python が利用できない場合は「開始」ボタンが無効化されま�
 
 ## 🧹 画像端の細胞除去（境界除去）
 
-Cellpose は画像端の細胞を途切れた状態で検出することがあります。  
+Cellpose は画像端の細胞を途切れた状態で検出することがあります。
 CellCounter では以下の設定により **境界細胞を除去**できます：
 
-- 上端 / 下端 / 左端 / 右端  
-- マージン（px）設定（初期値 2px）
+- 上端 / 下端 / 左端 / 右端
+- マージン（初期値 2px）
 
 除去された細胞はオーバーレイ画像で **赤色の輪郭**として描画されます。
 
 ---
 
-## 🎨 輪郭オーバーレイ画像の生成（CellCounter 独自機能）
+## 🎨 輪郭オーバーレイ画像の生成
 
 Cellpose のマスクをもとに、CellCounter が元画像へ輪郭を重ねた画像を生成します。
 
-- 採用された細胞 → 緑の輪郭  
-- 境界除去された細胞 → 赤の輪郭  
+- 採用された細胞 → 緑の輪郭
+- 境界除去された細胞 → 赤の輪郭
 
 生成されるファイル（保存オプションが有効な場合）：
 
-- `{base}_overlay.png` — CellCounter が生成する輪郭オーバーレイ画像  
+- `{base}_overlay.png`
 
 ---
 
 ## 🧩 Cellpose 標準出力（保存オプションが有効な場合）
 
-- `{base}_cp_masks.png` — Cellpose 標準のマスク画像  
-- `{base}_seg.npy` — flows / masks / styles を含む Cellpose 標準形式  
-
-※ `{base}` は入力画像ファイル名（拡張子なし）
+- `{base}_cp_masks.png`
+- `{base}_seg.npy`（flows / masks / styles）
 
 ---
 
 ## 📄 解析設定ログ（settings.json）
 
-「開始」ボタンを押すと、推論に使用した設定が `settings.json` として保存されます。
+以下の設定が自動的に記録されます：
 
-記録内容（概要）：
-
-- Cellpose モデル  
-- 境界除去設定  
-- タイムアウト  
-- GPU/CPU 使用状況  
-- 入力・出力パス  
+- Cellpose モデル
+- 境界除去設定
+- タイムアウト
+- GPU/CPU 使用状況
+- 入力・出力パス
 
 解析の再現性を確保するためのログです。
 
@@ -95,60 +179,45 @@ Cellpose のマスクをもとに、CellCounter が元画像へ輪郭を重ね�
 
 ## 📊 バッチ処理 + CSV 出力
 
-- フォルダ内の画像を一括処理  
-- 進捗バー表示  
-- `cells.csv` を出力  
-  - FileName  
-  - CellCount（Cellpose の検出数）  
-  - FilteredCount（境界除去後の細胞数）
-
----
+- フォルダ内の画像を一括処理
+- 進捗バー表示
+- `cells.csv` を出力
+    - FileName
+    - CellCount
+    - FilteredCount
+    
+    ---
+    
 
 ## 🧩 出力ファイル一覧
 
-CellCounter は、選択した保存オプションに応じて以下のファイルを出力します。  
-※ `{base}` は入力画像ファイル名（拡張子なし）を表します。
-
 | 種類 | ファイル名 | 内容 |
 | --- | --- | --- |
-| 輪郭オーバーレイ画像 | `{base}_overlay.tif` | CellCounter が生成する輪郭画像（緑＝採用 / 赤＝境界除去） |
+| 輪郭オーバーレイ画像 | `{base}_overlay.tif` | 緑＝採用 / 赤＝境界除去 |
 | マスク画像 | `{base}_cp_masks.png` | Cellpose 標準のマスク画像 |
-| seg.npy | `{base}_seg.npy` | flows / masks / styles を含む Cellpose 標準形式 |
-| 解析設定ログ | `settings.json` | Cellpose 推論に使用した設定の記録 |
-| 解析結果 | `cells.csv` | ファイル名・CellCount・FilteredCount の一覧 |
+| seg.npy | `{base}_seg.npy` | flows / masks / styles |
+| 解析設定ログ | `settings.json` | 推論設定の記録 |
+| 解析結果 | `cells.csv` | CellCount / FilteredCount |
 
 ---
 
 ## 🖥️ 使い方
 
-1. 画像フォルダを選択  
-2. 出力フォルダを選択  
-3. 詳細設定を開く  
-   - GPU 使用  
-   - 境界細胞除去  
-   - 保存オプション（マスク / seg.npy / オーバーレイ）  
-   - タイムアウト  
-4. 詳細設定を閉じる  
-5. 「開始」でバッチ処理開始  
-   - `settings.json` と `cells.csv` が保存されます  
+1. 画像フォルダを選択
+2. 出力フォルダを選択
+3. 詳細設定を開く
+4. 「開始」でバッチ処理開始
+5. `settings.json` と `cells.csv` が保存されます
 6. 「キャンセル」で即時中断
 
 ---
 
 ## ⚠️ 注意事項
 
-- Cellpose が Unicode パスに対応していないため、全角パスは使用不可  
-- フル版は同梱 Python を使用  
-- 軽量版はユーザー環境の Python を自動検出  
-
----
-
-## ⚙️ WPF (MVVM) アーキテクチャ
-
-- UI とロジックを分離  
-- 非同期処理 + キャンセル対応  
-- PythonServer → PythonClient → BatchProcessor の三層構造  
-- 状態に応じて UI を自動制御
+- Cellpose が Unicode パスに対応していないため、全角パスは使用不可
+- Python は同梱されません
+- python-runtime は **site-packages のみ**であり、Python 本体は含まれません
+- Embeddable Python を使う場合は python312._pth の配置が必要です
 
 ---
 
@@ -156,33 +225,31 @@ CellCounter は、選択した保存オプションに応じて以下のファ�
 
 ### PythonServer（C#）
 
-- Python を起動して server.py を実行  
-- Cellpose import / GPU 利用可否を判定  
-- 推論を JSON で送受信  
+- Python を起動して server.py を実行
+- Cellpose import / GPU 利用可否を判定
+- 推論を JSON で送受信
 - タイムアウト時はプロセスを Kill
 
 ### server.py（Python）
 
-- Cellpose 推論  
-- 境界細胞除去  
-- マスク・seg.npy 保存  
-- オーバーレイ画像生成  
+- Cellpose 推論
+- 境界細胞除去
+- マスク・seg.npy 保存
+- オーバーレイ画像生成
 - 結果を JSON で返却
 
 ### BatchProcessor
 
-- 画像フォルダを走査  
-- PythonServer を呼び出し  
-- CSV 出力  
+- 画像フォルダを走査
+- PythonServer を呼び出し
+- CSV 出力
 - 非同期 + キャンセル対応
 
 ---
 
 ## 📂 プロジェクト構成
 
-### WPF プロジェクト（CellCounter.Wpf）
-
-```bash
+```
 CellCounter.Wpf/
 ├── View/
 ├── ViewModel/
@@ -190,11 +257,7 @@ CellCounter.Wpf/
 ├── Model/
 ├── python_embed/
 └── CellCounter.Wpf.csproj
-```
 
-### Python バックエンド（開発用）
-
-```bash
 CellCounter.Py/
 ├── server.py
 ├── get_cellpose_info.py
@@ -203,22 +266,9 @@ CellCounter.Py/
 └── cellpose/
 ```
 
-### 配布時の構成（フル版）
+### 配布時の構成
 
-```bash
-CellCounter/
-├── CellCounter.exe
-├── server.py
-├── get_cellpose_info.py
-├── remove_edge_cells.py
-├── overlay.py
-└── python/
-    └── site-packages/
 ```
-
-### 配布時の構成（軽量版）
-
-```bash
 CellCounter/
 ├── CellCounter.exe
 ├── server.py
@@ -238,7 +288,7 @@ CellCounter/
 
 ---
 
-## 🛠️ 開発者向け：Cellpose バックエンド環境構築
+## 🛠️ Cellpose バックエンド環境構築
 
 ```bash
 python -m venv cellpose
@@ -248,64 +298,6 @@ pip uninstall torch
 pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu126
 pip install packaging
 ```
-
----
-
-## 🛠️ Release ビルドの自動化（GitHub Actions）
-
-- フル版：Python runtime を同梱し ZIP を分割
-- 軽量版：Python 非同梱で軽量 ZIP を生成
-
----
-
-## 📦 分割 ZIP の結合方法
-
-GitHub の 2GB 制限を回避するため、CellCounter のフル版は
-**複数の分割 ZIP（.zip.001, .zip.002, ...）として配布**されています。
-
-### 1. すべての分割 ZIP をダウンロード
-
-例：
-
-```
-CellCounter-vX.Y.Z.zip.001
-CellCounter-vX.Y.Z.zip.002
-```
-
-> ⚠️ **すべて同じフォルダに保存してください。**
-1つでも欠けていると結合できません。
->
-
-### 2. ZIP を結合して展開
-
-#### 方法 A（推奨）：7-Zip で `.zip.001` を開く
-
-1. `.zip.001` を右クリック
-2. **7-Zip → 「展開」** を選択
-3. `.zip.002` 以降も自動的に読み込まれます
-
-> 最も簡単で確実な方法です。
-> 
-
-#### 方法 B（上級者向け）：コマンドラインで結合
-
-> ⚠️ **PowerShell では動作しません。必ず cmd.exe を使用してください。**
-PowerShell は `copy /b` を内部コマンドとして扱わないためエラーになります。
-> 
-1. Windows の検索で **cmd** と入力し「コマンドプロンプト」を開く
-2. 分割 ZIP があるフォルダへ移動
-3. 以下を実行：
-    
-    ```bash
-    copy /b CellCounter-vX.Y.Z.zip.001 + CellCounter-vX.Y.Z.zip.002 CellCounter.zip
-    ```
-    
-4. 結合された `CellCounter.zip` を展開：
-    
-    ```bash
-    7z x CellCounter.zip
-    ```
-    
 
 ---
 
