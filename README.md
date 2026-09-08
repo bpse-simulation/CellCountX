@@ -1,6 +1,6 @@
-# 📘 CellCountX — Cellpose を GUI から扱える画像解析アプリ
+# 📘 CellCounter — Cellpose を GUI から扱える画像解析アプリ
 
-CellCountX は **Cellpose + PyTorch** をバックエンドに用いて、  
+CellCounter は **Cellpose + PyTorch** をバックエンドに用いて、  
 GUI から画像フォルダを指定するだけで **細胞セグメンテーション・カウント・境界除去・CSV 出力・輪郭オーバーレイ生成**を行う WPF アプリケーションです。
 
 ---
@@ -46,7 +46,7 @@ Python が利用できない場合は「開始」ボタンが無効化されま�
 ## 🧹 画像端の細胞除去（境界除去）
 
 Cellpose は画像端の細胞を途切れた状態で検出することがあります。  
-CellCountX では以下の設定により **境界細胞を除去**できます：
+CellCounter では以下の設定により **境界細胞を除去**できます：
 
 - 上端 / 下端 / 左端 / 右端  
 - マージン（px）設定（初期値 2px）
@@ -55,16 +55,16 @@ CellCountX では以下の設定により **境界細胞を除去**できます�
 
 ---
 
-## 🎨 輪郭オーバーレイ画像の生成（CellCountX 独自機能）
+## 🎨 輪郭オーバーレイ画像の生成（CellCounter 独自機能）
 
-Cellpose のマスクをもとに、CellCountX が元画像へ輪郭を重ねた画像を生成します。
+Cellpose のマスクをもとに、CellCounter が元画像へ輪郭を重ねた画像を生成します。
 
 - 採用された細胞 → 緑の輪郭  
 - 境界除去された細胞 → 赤の輪郭  
 
 生成されるファイル（保存オプションが有効な場合）：
 
-- `{base}_overlay.png` — CellCountX が生成する輪郭オーバーレイ画像  
+- `{base}_overlay.png` — CellCounter が生成する輪郭オーバーレイ画像  
 
 ---
 
@@ -106,12 +106,12 @@ Cellpose のマスクをもとに、CellCountX が元画像へ輪郭を重ねた
 
 ## 🧩 出力ファイル一覧
 
-CellCountX は、選択した保存オプションに応じて以下のファイルを出力します。  
+CellCounter は、選択した保存オプションに応じて以下のファイルを出力します。  
 ※ `{base}` は入力画像ファイル名（拡張子なし）を表します。
 
 | 種類 | ファイル名 | 内容 |
 | --- | --- | --- |
-| 輪郭オーバーレイ画像 | `{base}_overlay.tif` | CellCountX が生成する輪郭画像（緑＝採用 / 赤＝境界除去） |
+| 輪郭オーバーレイ画像 | `{base}_overlay.tif` | CellCounter が生成する輪郭画像（緑＝採用 / 赤＝境界除去） |
 | マスク画像 | `{base}_cp_masks.png` | Cellpose 標準のマスク画像 |
 | seg.npy | `{base}_seg.npy` | flows / masks / styles を含む Cellpose 標準形式 |
 | 解析設定ログ | `settings.json` | Cellpose 推論に使用した設定の記録 |
@@ -180,22 +180,22 @@ CellCountX は、選択した保存オプションに応じて以下のファイ
 
 ## 📂 プロジェクト構成
 
-### WPF プロジェクト（CellCountX.Wpf）
+### WPF プロジェクト（CellCounter.Wpf）
 
 ```bash
-CellCountX.Wpf/
+CellCounter.Wpf/
 ├── View/
 ├── ViewModel/
 ├── Logic/
 ├── Model/
 ├── python_embed/
-└── CellCountX.Wpf.csproj
+└── CellCounter.Wpf.csproj
 ```
 
 ### Python バックエンド（開発用）
 
 ```bash
-CellCountX.Py/
+CellCounter.Py/
 ├── server.py
 ├── get_cellpose_info.py
 ├── remove_edge_cells.py
@@ -206,8 +206,8 @@ CellCountX.Py/
 ### 配布時の構成（フル版）
 
 ```bash
-CellCountX/
-├── CellCountX.exe
+CellCounter/
+├── CellCounter.exe
 ├── server.py
 ├── get_cellpose_info.py
 ├── remove_edge_cells.py
@@ -219,8 +219,8 @@ CellCountX/
 ### 配布時の構成（軽量版）
 
 ```bash
-CellCountX/
-├── CellCountX.exe
+CellCounter/
+├── CellCounter.exe
 ├── server.py
 ├── get_cellpose_info.py
 ├── remove_edge_cells.py
@@ -260,7 +260,7 @@ pip install packaging
 
 ## 📦 分割 ZIP の結合方法
 
-GitHub の 2GB 制限を回避するため、CellCountX のフル版は
+GitHub の 2GB 制限を回避するため、CellCounter のフル版は
 **複数の分割 ZIP（.zip.001, .zip.002, ...）として配布**されています。
 
 ### 1. すべての分割 ZIP をダウンロード
@@ -268,8 +268,8 @@ GitHub の 2GB 制限を回避するため、CellCountX のフル版は
 例：
 
 ```
-CellCountX-vX.Y.Z.zip.001
-CellCountX-vX.Y.Z.zip.002
+CellCounter-vX.Y.Z.zip.001
+CellCounter-vX.Y.Z.zip.002
 ```
 
 > ⚠️ **すべて同じフォルダに保存してください。**
@@ -297,13 +297,13 @@ PowerShell は `copy /b` を内部コマンドとして扱わないためエラ�
 3. 以下を実行：
     
     ```bash
-    copy /b CellCountX-vX.Y.Z.zip.001 + CellCountX-vX.Y.Z.zip.002 CellCountX.zip
+    copy /b CellCounter-vX.Y.Z.zip.001 + CellCounter-vX.Y.Z.zip.002 CellCounter.zip
     ```
     
-4. 結合された `CellCountX.zip` を展開：
+4. 結合された `CellCounter.zip` を展開：
     
     ```bash
-    7z x CellCountX.zip
+    7z x CellCounter.zip
     ```
     
 
