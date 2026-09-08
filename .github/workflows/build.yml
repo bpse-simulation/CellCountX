@@ -1,4 +1,4 @@
-name: Build CellCountX
+name: Build CellCounter
 
 on:
   push:

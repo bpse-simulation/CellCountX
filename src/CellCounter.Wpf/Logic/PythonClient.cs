@@ -1,0 +1,40 @@
+﻿using CellCounter.Wpf.Model;
+
+namespace CellCounter.Wpf.Logic;
+
+public class PythonClient(PythonServer server)
+{
+    private readonly PythonServer _server = server;
+
+    public async Task<PythonResponse> RunAsync(string json, int timeoutSeconds, CancellationToken token)
+    {
+        try
+        {
+            // PythonServerResult を受け取る
+            var result = await _server.RunOnceAsync(json, timeoutSeconds, token);
+
+            if (result.IsError)
+            {
+                return new PythonResponse
+                {
+                    IsError = true,
+                    ErrorMessage = result.ErrorMessage
+                };
+            }
+
+            return new PythonResponse
+            {
+                IsError = false,
+                RawOutput = result.Output
+            };
+        }
+        catch (OperationCanceledException)
+        {
+            return new PythonResponse
+            {
+                IsError = true,
+                ErrorMessage = "キャンセルされました"
+            };
+        }
+    }
+}
